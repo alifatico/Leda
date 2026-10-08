@@ -1,6 +1,7 @@
 /* Browser-side helpers for the API routes. */
 import type { PublicConfig, PlanId } from "./env";
 import type { LineItem, Quote } from "./quote";
+import type { ShareOwnerView, SharePublic } from "./share";
 
 export class ApiError extends Error {
   constructor(
@@ -55,6 +56,20 @@ export const api = {
       method: "POST",
       body: JSON.stringify(args),
     }),
+
+  share: {
+    create: (quote: Quote, auth: { license?: string; unlock?: string }, existing?: { id: string; ownerKey: string }) =>
+      call<{ id: string; ownerKey: string; url: string; status: ShareOwnerView }>("/api/share", {
+        method: "POST",
+        body: JSON.stringify({ quote, ...auth, share: existing }),
+      }),
+    status: (id: string, ownerKey: string) => call<ShareOwnerView>(`/api/share/${encodeURIComponent(id)}?key=${encodeURIComponent(ownerKey)}`),
+    revoke: (id: string, ownerKey: string) =>
+      call<{ ok: true }>(`/api/share/${encodeURIComponent(id)}`, { method: "DELETE", body: JSON.stringify({ ownerKey }) }),
+    view: (id: string) => call<{ ok: boolean }>(`/api/share/${encodeURIComponent(id)}/view`, { method: "POST", body: "{}" }),
+    decide: (id: string, args: { decision: "accepted" | "declined"; name: string; note?: string }) =>
+      call<SharePublic>(`/api/share/${encodeURIComponent(id)}/decide`, { method: "POST", body: JSON.stringify(args) }),
+  },
 
   /** Returns the PDF bytes; throws ApiError on 402 so the caller can react (expired licence, etc.). */
   async pdf(quote: Quote, auth: { license?: string; unlock?: string }): Promise<{ blob: Blob; watermark: boolean; filename: string }> {

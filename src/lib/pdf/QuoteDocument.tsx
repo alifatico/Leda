@@ -320,7 +320,7 @@ export function QuoteDocument({ quote, watermark }: Props) {
               <>
                 <View style={styles.totalLine}>
                   <Text style={styles.totalLabel}>
-                    {L.rivalsa} {formatPct(quote.options.rivalsaInpsPct, lang)}
+                    {quote.options.rivalsaLabel ? s(quote.options.rivalsaLabel) : `${L.rivalsa} ${formatPct(quote.options.rivalsaInpsPct, lang)}`}
                   </Text>
                   <Text style={styles.totalValue}>{money(t.rivalsa)}</Text>
                 </View>

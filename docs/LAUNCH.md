@@ -10,6 +10,8 @@ Obiettivo: primi 100 € nel mese 1, 300–1.000 €/mese entro 6 mesi, con cost
 - [ ] Pagamento di prova reale da 4,90 € con la tua carta, poi rimborso dal dashboard.
 - [ ] Google Search Console + Plausible (`NEXT_PUBLIC_PLAUSIBLE_DOMAIN`).
 - [ ] `ANTHROPIC_API_KEY` con limite di spesa mensile impostato nella console Anthropic.
+- [ ] Upstash Redis dal marketplace Vercel (gratis): senza, il pulsante "Invia al cliente" non compare.
+- [ ] `RESEND_API_KEY` + dominio verificato: serve per gli avvisi di accettazione e per il recupero della chiave Pro.
 
 ## Settimana 1 — distribuzione a costo zero
 
@@ -17,7 +19,7 @@ Obiettivo: primi 100 € nel mese 1, 300–1.000 €/mese entro 6 mesi, con cost
    - "preventivo pdf", "modello preventivo", "fac simile preventivo", "preventivo online gratis"
    - "preventivo forfettario", "preventivo con ritenuta d'acconto", "preventivo rivalsa inps 4%"
    - "preventivo freelance", "preventivo grafico / fotografo / consulente / web designer"
-   Prossimo passo tecnico: una pagina `/preventivo-[professione]` per ciascuna nicchia (stesso builder, copy e esempio diversi).
+   Già online: 20 pagine `/preventivo/<professione>` con modelli precompilati e `/preventivo-ai`. Prossimo passo: pagine per città sulle professioni artigiane (idraulico Milano, elettricista Roma…) solo se le pagine professione portano traffico, per non creare contenuti sottili.
 2. **Community**: gruppi Facebook/LinkedIn di freelance e partite IVA, r/ItalyInformatica, forum commercialisti. Formato: "ho fatto uno strumento gratis che calcola rivalsa e ritenuta nel preventivo", non pubblicità.
 3. **Product Hunt / Indie Hackers**: lancio in inglese, angolo "no-signup, stateless, Stripe-only SaaS".
 4. **Lista contatti dell'agenzia**: email ai clienti e partner freelance con il link all'esempio PDF.
@@ -43,11 +45,13 @@ Se il tasso "prova → pagamento" è sotto il 3 %: abbassa il singolo a 2,90 €
 
 ## Roadmap suggerita (ordine di impatto)
 
-1. Pagine SEO per professione (vedi sopra) + blog "come fare un preventivo" (3 articoli).
-2. Invio del preventivo via email al cliente con link di accettazione (richiede storage: Vercel KV / Postgres).
+1. Blog "come fare un preventivo" (3 articoli) che linka le pagine per professione.
+2. Promemoria automatico al cliente che non ha ancora risposto dopo 3 giorni (il link è già tracciato).
 3. Conversione preventivo → fattura (export XML per fattura elettronica è un upsell naturale).
-4. Modelli salvati (voci ricorrenti) e numerazione automatica per anno.
+4. Modelli salvati dall'utente (voci ricorrenti) e catalogo prodotti.
 5. Versione white-label per agenzie e commercialisti (Pro Team).
+
+Le scelte di prezzo e posizionamento rispetto ai concorrenti sono motivate in `docs/COMPETITORS.md`.
 
 ## Note legali rapide
 

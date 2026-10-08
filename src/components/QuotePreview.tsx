@@ -116,7 +116,7 @@ export function QuotePreview({ quote, watermark = false, className = "" }: { quo
             <Line label={L.net} value={money(t.net)} />
             {t.rivalsa > 0 ? (
               <>
-                <Line label={`${L.rivalsa} ${formatPct(quote.options.rivalsaInpsPct, quote.lang)}`} value={money(t.rivalsa)} />
+                <Line label={quote.options.rivalsaLabel || `${L.rivalsa} ${formatPct(quote.options.rivalsaInpsPct, quote.lang)}`} value={money(t.rivalsa)} />
                 <Line label={L.taxable} value={money(t.taxable)} />
               </>
             ) : null}

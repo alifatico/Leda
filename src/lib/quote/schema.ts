@@ -31,6 +31,7 @@ const lineItemSchema = z.object({
 const optionsSchema = z.object({
   globalDiscountPct: z.number().finite().min(0).max(100),
   rivalsaInpsPct: z.number().finite().min(0).max(100),
+  rivalsaLabel: z.string().max(80).optional(),
   ritenutaAccontoPct: z.number().finite().min(0).max(100),
   regimeForfettario: z.boolean(),
   bollo: z.boolean(),

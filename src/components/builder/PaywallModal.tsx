@@ -60,6 +60,7 @@ export function PaywallModal({
           </Button>
         </div>
       </div>
+      {config.sharing ? <p className="mt-3 text-center text-xs text-slate-600">{t("b.paywall.includesShare")}</p> : null}
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
         <span className="inline-flex items-center gap-1">
           <Icon name="lock" className="h-3.5 w-3.5" /> {t("b.paywall.secure")}

@@ -46,6 +46,8 @@ export type QuoteOptions = {
   globalDiscountPct: number;
   /** "Rivalsa INPS" (gestione separata): usually 0 or 4 */
   rivalsaInpsPct: number;
+  /** Custom wording for the 4% surcharge, e.g. "Contributo integrativo Inarcassa 4%" */
+  rivalsaLabel?: string;
   /** "Ritenuta d'acconto": usually 0 or 20 */
   ritenutaAccontoPct: number;
   /** Flat-rate scheme (regime forfettario): no VAT, no withholding, legal wording */

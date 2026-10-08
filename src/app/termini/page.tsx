@@ -40,6 +40,13 @@ export default function TermsPage() {
         L&apos;utente è l&apos;unico responsabile dei contenuti inseriti nei preventivi e della loro correttezza, anche fiscale. Il Servizio applica calcoli standard (IVA, rivalsa INPS,
         ritenuta d&apos;acconto, imposta di bollo, regime forfettario) a titolo di ausilio e non costituisce consulenza fiscale o legale.
       </p>
+      <h2>4-bis. Invio al cliente e accettazione online</h2>
+      <p>
+        L&apos;utente può generare un link pubblico al preventivo e inviarlo a chi preferisce; è responsabile della diffusione del link e dei contenuti condivisi. Il destinatario può
+        accettare o rifiutare il preventivo indicando il proprio nome: il Servizio registra la decisione con data, ora e un identificativo tecnico della connessione e ne dà notizia al
+        mittente. Tale registrazione costituisce una prova dell&apos;accettazione tra le parti ma non una firma elettronica qualificata; per contratti che richiedono forme particolari
+        l&apos;utente deve provvedere con gli strumenti previsti dalla legge. I link scadono dopo 12 mesi o quando l&apos;utente li disattiva.
+      </p>
       <h2>5. Dati e disponibilità</h2>
       <p>
         I preventivi sono salvati nel browser dell&apos;utente, che è responsabile del loro backup. Ci impegniamo a mantenere il Servizio disponibile ma non garantiamo l&apos;assenza di

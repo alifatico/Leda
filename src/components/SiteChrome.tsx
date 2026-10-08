@@ -63,6 +63,12 @@ export function SiteFooter({ supportEmail, businessName }: { supportEmail: strin
           <p className="mt-2 text-sm text-slate-500">{t("footer.tagline")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-600">
+          <Link href="/preventivo" className="hover:text-slate-900">
+            {t("footer.templates")}
+          </Link>
+          <Link href="/preventivo-ai" className="hover:text-slate-900">
+            {t("footer.ai")}
+          </Link>
           <Link href="/privacy" className="hover:text-slate-900">
             {t("footer.privacy")}
           </Link>

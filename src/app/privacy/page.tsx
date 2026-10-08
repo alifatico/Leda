@@ -31,6 +31,12 @@ export default function PrivacyPage() {
           browser dell&apos;utente e, su richiesta dell&apos;utente, inviato via email tramite il fornitore Resend.
         </li>
         <li>
+          <strong>Invio al cliente</strong>: se l&apos;utente sceglie di inviare un preventivo con link, una copia del documento (dati del mittente, del destinatario, voci, importi e logo) viene
+          salvata sui nostri server per 12 mesi o fino alla disattivazione del link da parte dell&apos;utente. Chi riceve il link può accettare o rifiutare il preventivo: in tal caso
+          registriamo nome, eventuale nota, data e ora e un identificativo tecnico derivato dall&apos;indirizzo IP (hash giornaliero, non reversibile), e inviamo un avviso via email al
+          mittente. L&apos;archiviazione avviene su Upstash (Redis gestito) nella regione scelta in fase di configurazione.
+        </li>
+        <li>
           <strong>Dati tecnici</strong>: indirizzo IP e dati di navigazione sono trattati temporaneamente per la sicurezza del servizio (limitazione delle richieste) e, se attive, per
           statistiche aggregate e anonime (Plausible Analytics, senza cookie).
         </li>
@@ -42,12 +48,13 @@ export default function PrivacyPage() {
       </p>
       <h2>3. Conservazione</h2>
       <p>
-        I contenuti dei preventivi non sono conservati sui nostri server. I dati relativi ai pagamenti sono conservati da Stripe e nella nostra contabilità per il periodo previsto dalla
+        I contenuti dei preventivi non sono conservati sui nostri server, salvo quelli inviati con link (12 mesi o fino alla disattivazione). I dati relativi ai pagamenti sono conservati da Stripe e nella nostra contabilità per il periodo previsto dalla
         legge (10 anni). I log tecnici sono conservati per un massimo di 30 giorni.
       </p>
       <h2>4. Destinatari e trasferimenti</h2>
       <p>
-        Fornitori di servizi che agiscono come responsabili del trattamento: Vercel (hosting), Stripe (pagamenti), Anthropic (bozza con AI), Resend (email). Alcuni fornitori possono
+        Fornitori di servizi che agiscono come responsabili del trattamento: Vercel (hosting), Stripe (pagamenti), Anthropic (bozza con AI), Resend (email), Upstash (archiviazione dei
+        preventivi inviati con link). Alcuni fornitori possono
         trattare dati al di fuori dell&apos;UE sulla base delle Clausole Contrattuali Standard o del Data Privacy Framework.
       </p>
       <h2>5. Cookie e archiviazione locale</h2>

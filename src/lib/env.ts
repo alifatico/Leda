@@ -103,15 +103,24 @@ export function getPricing(): Pricing {
 export type PublicConfig = {
   payments: boolean;
   ai: boolean;
+  /** "send to client" link + online acceptance (needs a KV store, see src/lib/store.ts) */
+  sharing: boolean;
   pricing: Pricing;
   supportEmail: string;
   recovery: boolean;
 };
 
+export function sharingConfigured(): boolean {
+  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  return Boolean(url && token) || process.env.SHARE_STORE === "memory";
+}
+
 export function publicConfig(): PublicConfig {
   return {
     payments: paymentsEnabled(),
     ai: aiEnv.enabled(),
+    sharing: sharingConfigured(),
     pricing: getPricing(),
     supportEmail: businessEnv.supportEmail(),
     recovery: Boolean(emailEnv.resendApiKey()),

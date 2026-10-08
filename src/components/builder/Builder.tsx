@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { track } from "@/lib/analytics";
 import { api, ApiError, downloadBlob, formatPrice } from "@/lib/client-api";
 import type { PlanId, PublicConfig } from "@/lib/env";
 import { useLocale } from "@/lib/i18n/context";
 import { newId, nextQuoteNumber, type LineItem, type Quote } from "@/lib/quote";
-import { createQuoteFromProfile, profileStore, quotesStore, type StoredQuote } from "@/lib/storage";
+import { createQuoteFromProfile, createQuoteFromTemplate, profileStore, quotesStore, type ShareInfo, type StoredQuote } from "@/lib/storage";
 import { LocaleSwitch } from "../LocaleSwitch";
 import { QuotePreview } from "../QuotePreview";
 import { Logo } from "../SiteChrome";
@@ -20,6 +21,7 @@ import { PartyForm } from "./PartyForm";
 import { PaywallModal } from "./PaywallModal";
 import { ProPanel } from "./ProPanel";
 import { QuotesDrawer } from "./QuotesDrawer";
+import { ShareModal } from "./ShareModal";
 import { useLicense } from "./useLicense";
 
 type SectionKey = "details" | "sender" | "client" | "items" | "options" | "notes" | "branding";
@@ -63,6 +65,8 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
   const [config, setConfig] = useState(initialConfig);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [unlock, setUnlock] = useState<string | undefined>(undefined);
+  const [share, setShare] = useState<ShareInfo | undefined>(undefined);
+  const [shareOpen, setShareOpen] = useState(false);
   const [quotes, setQuotes] = useState<StoredQuote[]>([]);
   const [open, setOpen] = useState<Record<SectionKey, boolean>>({ details: true, sender: true, client: true, items: true, options: false, notes: false, branding: false });
   const [mobileTab, setMobileTab] = useState<"edit" | "preview">("edit");
@@ -82,13 +86,18 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
       const all = quotesStore.all();
       setQuotes(all);
       const wanted = searchParams.get("doc");
-      const found = (wanted && all.find((s) => s.quote.id === wanted)) || all[0];
-      if (found) {
+      const template = searchParams.get("template");
+      const found = !template && ((wanted && all.find((s) => s.quote.id === wanted)) || all[0]);
+      if (template) {
+        setQuote(createQuoteFromTemplate(template) ?? createQuoteFromProfile());
+      } else if (found) {
         setQuote(found.quote);
         setUnlock(found.unlock);
+        setShare(found.share);
       } else {
         setQuote(createQuoteFromProfile());
       }
+      if (searchParams.get("ai")) setAiOpen(true);
       const lic = searchParams.get("license");
       if (lic) {
         const ok = license.activate(lic);
@@ -96,7 +105,7 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
       }
       if (searchParams.get("checkout") === "canceled") show(t("b.canceled"));
       if (searchParams.get("plan")) setPaywall(true);
-      if (lic || searchParams.get("checkout") || searchParams.get("plan")) router.replace("/app");
+      if (lic || searchParams.get("checkout") || searchParams.get("plan") || template || searchParams.get("ai")) router.replace("/app");
       api.config().then((c) => !cancelled && setConfig(c)).catch(() => undefined);
     });
     return () => {
@@ -109,12 +118,12 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
   useEffect(() => {
     if (!quote) return;
     const id = setTimeout(() => {
-      quotesStore.save({ quote, unlock });
+      quotesStore.save({ quote, unlock, share });
       profileStore.updateFromQuote(quote);
       setQuotes(quotesStore.all());
     }, 350);
     return () => clearTimeout(id);
-  }, [quote, unlock]);
+  }, [quote, unlock, share]);
 
   const update = useCallback((patch: Partial<Quote>) => {
     setQuote((q) => (q ? { ...q, ...patch, updatedAt: Date.now() } : q));
@@ -125,13 +134,15 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
     if (!s) return;
     setQuote(s.quote);
     setUnlock(s.unlock);
+    setShare(s.share);
     setDrawer(false);
     setMobileTab("edit");
   };
   const createNew = () => {
-    if (quote) quotesStore.save({ quote, unlock });
+    if (quote) quotesStore.save({ quote, unlock, share });
     setQuote(createQuoteFromProfile());
     setUnlock(undefined);
+    setShare(undefined);
     setDrawer(false);
   };
   const duplicate = (id: string) => {
@@ -141,6 +152,7 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
     quotesStore.save({ quote: copy });
     setQuote(copy);
     setUnlock(undefined);
+    setShare(undefined);
     setDrawer(false);
   };
   const remove = (id: string) => {
@@ -152,15 +164,18 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
       if (rest[0]) {
         setQuote(rest[0].quote);
         setUnlock(rest[0].unlock);
+        setShare(rest[0].share);
       } else {
         setQuote(createQuoteFromProfile());
         setUnlock(undefined);
+        setShare(undefined);
       }
     }
   };
 
   const applyDraft = (d: { subject: string; notes: string; paymentTerms: string; items: LineItem[] }, mode: "replace" | "append") => {
     if (!quote) return;
+    track("ai_draft_apply", { mode });
     const existing = quote.items.filter((i) => i.description.trim() || i.unitPrice);
     update({
       items: mode === "replace" ? d.items : [...existing, ...d.items],
@@ -184,6 +199,7 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
   const downloadFree = async () => {
     if (!quote) return;
     setBusy("free");
+    track("pdf_preview");
     try {
       const r = await api.pdf(quote, {});
       downloadBlob(r.blob, r.filename);
@@ -226,6 +242,7 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
         downloadBlob(r.blob, r.filename);
         return;
       }
+      track("paywall_open");
       setPaywall(true);
     } catch (e) {
       show(errorMessage(e), "error");
@@ -237,14 +254,29 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
   const startCheckout = async (plan: PlanId) => {
     if (!quote) return;
     setBusyPlan(plan);
+    track("checkout_start", { plan, source: "app" });
     try {
-      quotesStore.save({ quote, unlock });
+      quotesStore.save({ quote, unlock, share });
       const { url } = await api.checkout(plan, plan === "single" ? quote.id : undefined, locale);
       window.location.href = url;
     } catch (e) {
       show(errorMessage(e), "error");
       setBusyPlan(null);
     }
+  };
+
+  const openShare = () => {
+    if (!quote) return;
+    if (!config.sharing) {
+      show(t("b.share.disabled"), "error");
+      return;
+    }
+    if (license.status !== "active" && !unlock) {
+      show(t("b.share.requiresPaid"));
+      setPaywall(true);
+      return;
+    }
+    setShareOpen(true);
   };
 
   if (!quote) {
@@ -357,6 +389,12 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
       {/* action bar */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-end gap-2 px-4 py-3">
+          {config.sharing ? (
+            <Button variant="secondary" onClick={openShare} disabled={busy !== null || quote.items.length === 0}>
+              <Icon name="external" className="h-4 w-4" /> {t("b.share.button")}
+              {share?.status ? <Badge tone={share.status === "accepted" ? "green" : share.status === "declined" ? "amber" : share.status === "viewed" ? "indigo" : "slate"}>{t(`b.share.status.${share.status}`)}</Badge> : null}
+            </Button>
+          ) : null}
           <Button variant="secondary" onClick={downloadFree} loading={busy === "free"} disabled={busy !== null || quote.items.length === 0}>
             <Icon name="file" className="h-4 w-4" /> {busy === "free" ? t("b.downloading") : t("b.downloadFree")}
           </Button>
@@ -388,6 +426,15 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
           setProOpen(false);
           setPaywall(true);
         }}
+      />
+      <ShareModal
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        quote={quote}
+        auth={{ license: license.status === "active" ? license.lic?.token : undefined, unlock }}
+        share={share}
+        onShareChange={setShare}
+        notify={show}
       />
       <QuotesDrawer open={drawer} onClose={() => setDrawer(false)} quotes={quotes} currentId={quote.id} onSelect={selectQuote} onNew={createNew} onDuplicate={duplicate} onDelete={remove} />
       <Toast message={toast?.message ?? null} tone={toast?.tone} />

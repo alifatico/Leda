@@ -12,7 +12,7 @@ Chi ha una Partita IVA fa preventivi ogni settimana, di solito con Word o Excel:
 | Singolo | 4,90 € una tantum | PDF pulito di quel preventivo, riscaricabile dopo le modifiche |
 | Pro | 9 €/mese o 59 €/anno | PDF illimitati, portale Stripe per gestire l'abbonamento |
 
-Nessun database, nessun account: i preventivi vivono nel browser dell'utente, Stripe è l'unica fonte di verità per i pagamenti e il server rilascia **token firmati** (HMAC) come prova di acquisto. Costi fissi: solo l'hosting (Vercel Pro 20 $/mese per uso commerciale, oppure Railway/Fly.io/un VPS da pochi euro) più le commissioni Stripe per transazione.
+Nessun database per gli utenti, nessun account: i preventivi vivono nel browser, Stripe è l'unica fonte di verità per i pagamenti e il server rilascia **token firmati** (HMAC) come prova di acquisto. L'unico stato lato server è opzionale: i preventivi **inviati al cliente** con link e accettazione online, salvati in un Redis (Upstash) con scadenza a 12 mesi. Costi fissi: solo l'hosting (Vercel Pro 20 $/mese per uso commerciale, oppure Railway/Fly.io/un VPS da pochi euro) più le commissioni Stripe per transazione.
 
 ---
 
@@ -25,6 +25,7 @@ Nessun database, nessun account: i preventivi vivono nel browser dell'utente, St
 
 Opzionali ma consigliati:
 
+- **Upstash Redis** (Vercel → Storage → Upstash Redis, piano gratuito) → attiva *Invia al cliente*: link pubblico, PDF pulito per il cliente, accettazione o rifiuto online con nome, data e ora, avviso via email a chi ha inviato. Le variabili `UPSTASH_REDIS_REST_URL/TOKEN` vengono iniettate da Vercel.
 - `ANTHROPIC_API_KEY` → attiva *Bozza con AI* (descrivi il lavoro → voci, prezzi e condizioni). Costo per bozza nell'ordine dei centesimi; `AI_DAILY_LIMIT` limita la spesa.
 - `RESEND_API_KEY` → recupero della chiave Pro via email ("ho perso la chiave").
 - `NEXT_PUBLIC_PLAUSIBLE_DOMAIN` → statistiche senza cookie.
@@ -43,7 +44,7 @@ npm run lint && npm run typecheck
 npm run build && npm start   # build di produzione
 ```
 
-Per i pagamenti in locale non servono webhook: la pagina `/success` verifica la sessione Checkout direttamente con l'API di Stripe.
+Per i pagamenti in locale non servono webhook: la pagina `/success` verifica la sessione Checkout direttamente con l'API di Stripe. Per provare *Invia al cliente* in locale usa `SHARE_STORE=memory` (store in memoria, si svuota al riavvio).
 
 ## Come funziona
 
@@ -62,7 +63,9 @@ Browser (localStorage)                      Server (Next.js route handlers, stat
 - **Singolo**: il token sblocca *quel* documento (`docId`), per sempre, anche dopo modifiche.
 - **Pro**: il token scade a fine periodo di fatturazione (+3 giorni di grazia); l'app lo rinnova da sola chiamando `/api/license/refresh`, che controlla lo stato dell'abbonamento su Stripe. Disdetta → nessun rinnovo.
 - **Recupero chiave**: `/api/license/recover` cerca l'email tra i clienti Stripe con abbonamento attivo e invia una nuova chiave (risposta identica in ogni caso: niente enumerazione di email).
-- **Rate limiting** in memoria su tutte le API (PDF, checkout, AI, recupero).
+- **Invia al cliente**: `/api/share` salva uno snapshot del preventivo pagato in Redis con un id pubblico e una chiave proprietario; `/p/<id>` mostra il preventivo, il PDF pulito e i pulsanti Accetta/Rifiuta; la decisione registra nome, nota, data e un hash giornaliero dell'IP e avvisa il mittente via email (Resend).
+- **Pagine SEO per professione** (`/preventivo/<slug>`): 20 modelli con contenuti unici e voci precompilate che si aprono nel builder con `/app?template=<slug>`; `/preventivo-ai` presenta la bozza con AI.
+- **Rate limiting** in memoria su tutte le API (PDF, checkout, AI, recupero, condivisione).
 
 ### Struttura
 
@@ -73,6 +76,8 @@ src/
   lib/quote/           modello, calcoli (calc.ts), schema zod, etichette documento it/en
   lib/pdf/             documento react-pdf + sanitizzazione caratteri
   lib/stripe.ts        Checkout, verifica sessione, abbonamenti, portale
+  lib/share.ts         link al cliente e accettazione (store.ts: Upstash Redis o memoria)
+  lib/professions.ts   modelli e contenuti delle pagine per professione
   lib/license.ts       token HMAC (single/pro)
   lib/ai.ts            bozza con Claude (output strutturato via zod)
   lib/i18n/            dizionari UI it/en
@@ -85,7 +90,7 @@ Sconti di riga e globale · IVA per aliquota (22/10/5/4/0) · rivalsa INPS 4% (s
 
 ## Lancio e crescita
 
-La checklist operativa (SEO, canali, prezzi, metriche) è in [`docs/LAUNCH.md`](docs/LAUNCH.md).
+La checklist operativa (SEO, canali, prezzi, metriche) è in [`docs/LAUNCH.md`](docs/LAUNCH.md); l'analisi dei concorrenti e le scelte di posizionamento in [`docs/COMPETITORS.md`](docs/COMPETITORS.md).
 
 ## Licenza
 

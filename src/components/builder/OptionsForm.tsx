@@ -56,6 +56,11 @@ export function OptionsForm({ quote, onChange }: { quote: Quote; onChange: (patc
       </div>
       <Toggle checked={o.regimeForfettario} onChange={(v) => set({ regimeForfettario: v, ritenutaAccontoPct: v ? 0 : o.ritenutaAccontoPct })} label={t("b.opt.forfettario")} help={t("b.opt.forfettarioHelp")} />
       <Toggle checked={o.rivalsaInpsPct > 0} onChange={(v) => set({ rivalsaInpsPct: v ? 4 : 0 })} label={t("b.opt.rivalsa")} help={t("b.opt.rivalsaHelp")} />
+      {o.rivalsaInpsPct > 0 ? (
+        <Field label={t("b.opt.rivalsaLabel")} hint={t("b.opt.rivalsaLabelHelp")}>
+          <Input value={o.rivalsaLabel ?? ""} onChange={(e) => set({ rivalsaLabel: e.target.value })} placeholder={t("b.opt.rivalsaLabelPh")} maxLength={80} />
+        </Field>
+      ) : null}
       {!o.regimeForfettario ? (
         <Toggle checked={o.ritenutaAccontoPct > 0} onChange={(v) => set({ ritenutaAccontoPct: v ? 20 : 0 })} label={t("b.opt.ritenuta")} help={t("b.opt.ritenutaHelp")} />
       ) : null}

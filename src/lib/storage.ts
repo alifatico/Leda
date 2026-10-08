@@ -1,11 +1,23 @@
 /* localStorage persistence. Everything the user creates lives only in their browser. */
-import { nextQuoteNumber, newQuote, type Party, type Quote, type QuoteOptions, type Branding, type DocLang } from "./quote";
+import { newId, nextQuoteNumber, newQuote, type Party, type Quote, type QuoteOptions, type Branding, type DocLang } from "./quote";
+import { getProfession, templateItems } from "./professions";
+
+export type ShareInfo = {
+  id: string;
+  ownerKey: string;
+  url: string;
+  status?: "sent" | "viewed" | "accepted" | "declined";
+  decisionName?: string;
+  updatedAt: number;
+};
 
 export type StoredQuote = {
   quote: Quote;
   /** signed single-purchase unlock token */
   unlock?: string;
   unlockedAt?: number;
+  /** public link sent to the client, if any */
+  share?: ShareInfo;
 };
 
 export type Profile = {
@@ -145,4 +157,21 @@ export function peekLicense(token: string): { exp?: number; plan?: "monthly" | "
   } catch {
     return null;
   }
+}
+
+/** New quote from a profession template (/app?template=slug), merged with the saved profile. */
+export function createQuoteFromTemplate(slug: string): Quote | null {
+  const p = getProfession(slug);
+  if (!p) return null;
+  const base = createQuoteFromProfile();
+  const forfettario = base.options.regimeForfettario;
+  return {
+    ...base,
+    lang: "it",
+    subject: p.subject,
+    items: templateItems(p).map((i) => ({ ...i, id: newId(), vatRate: forfettario ? 0 : i.vatRate })),
+    notes: p.notes,
+    paymentTerms: p.paymentTerms,
+    options: { ...base.options, ...(p.options ?? {}), regimeForfettario: forfettario, ritenutaAccontoPct: forfettario ? 0 : (p.options?.ritenutaAccontoPct ?? base.options.ritenutaAccontoPct) },
+  };
 }

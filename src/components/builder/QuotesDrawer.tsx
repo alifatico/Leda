@@ -42,6 +42,9 @@ export function QuotesDrawer({
                 <div className="flex items-center gap-2">
                   <span className="truncate text-sm font-medium text-slate-900">{q.number}</span>
                   {s.unlock ? <Badge tone="green">{t("b.unlocked")}</Badge> : <Badge>{t("b.draft")}</Badge>}
+                  {s.share?.status ? (
+                    <Badge tone={s.share.status === "accepted" ? "green" : s.share.status === "declined" ? "amber" : "indigo"}>{t(`b.share.status.${s.share.status}`)}</Badge>
+                  ) : null}
                 </div>
                 <div className="truncate text-xs text-slate-500">
                   {q.client.name || "—"} · {q.subject || ""}

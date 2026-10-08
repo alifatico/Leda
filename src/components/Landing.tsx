@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { track } from "@/lib/analytics";
 import { api, formatPrice } from "@/lib/client-api";
 import type { PlanId, PublicConfig } from "@/lib/env";
 import { useLocale } from "@/lib/i18n/context";
@@ -27,6 +28,7 @@ export function Landing({ config, businessName }: { config: PublicConfig; busine
       return;
     }
     setBusy(plan);
+    track("checkout_start", { plan, source: "landing" });
     try {
       const { url } = await api.checkout(plan, undefined, locale);
       window.location.href = url;
@@ -122,6 +124,39 @@ export function Landing({ config, businessName }: { config: PublicConfig; busine
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* COMPARISON */}
+      <section className="py-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <h2 className="text-center text-3xl font-bold tracking-tight text-slate-900">{t("compare.title")}</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-center text-slate-600">{t("compare.subtitle")}</p>
+          <div className="mt-10 overflow-x-auto rounded-2xl border border-slate-200">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead>
+                <tr className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <th className="px-4 py-3"></th>
+                  <th className="bg-indigo-50 px-4 py-3 text-indigo-800">{t("compare.colUs")}</th>
+                  <th className="px-4 py-3">{t("compare.colWord")}</th>
+                  <th className="px-4 py-3">{t("compare.colErp")}</th>
+                  <th className="px-4 py-3">{t("compare.colAi")}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {(["signup", "first", "price", "ai", "tax", "share", "einvoice", "data"] as const).map((row) => (
+                  <tr key={row}>
+                    <th className="px-4 py-3 text-left font-medium text-slate-900">{t(`compare.rows.${row}`)}</th>
+                    <td className="bg-indigo-50/60 px-4 py-3 font-medium text-indigo-900">{t(`compare.rows.${row}Us`)}</td>
+                    <td className="px-4 py-3 text-slate-600">{t(`compare.rows.${row}Word`)}</td>
+                    <td className="px-4 py-3 text-slate-600">{t(`compare.rows.${row}Erp`)}</td>
+                    <td className="px-4 py-3 text-slate-600">{t(`compare.rows.${row}Ai`)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-3 text-center text-xs text-slate-400">{t("compare.note")}</p>
         </div>
       </section>
 
