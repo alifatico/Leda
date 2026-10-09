@@ -32,13 +32,13 @@ describe("client address book", () => {
     expect(list[0].city).toBe("Bergamo");
   });
 
-  it("never lets a bare name (typed by hand) replace a card with details", () => {
+  it("ignores bare names (abandoned drafts, names typed by hand) and never lets them shadow a card with details", () => {
     const list = dedupeClients([
       entry("q1", 100, { name: "Acme Srl", vat: "IT1", city: "Milano" }),
       entry("q2", 999, { name: "acme srl" }),
+      entry("q3", 500, { name: "trat" }),
     ]);
-    expect(list).toHaveLength(1);
-    expect(list[0]).toEqual({ name: "Acme Srl", vat: "IT1", city: "Milano" });
+    expect(list).toEqual([{ name: "Acme Srl", vat: "IT1", city: "Milano" }]);
   });
 
   it("searches by name prefix first, then by substring, then by VAT, tax code or e-mail", () => {
@@ -48,7 +48,7 @@ describe("client address book", () => {
     expect(searchClients(book, "01234").map((p) => p.name)).toEqual(["Trattoria Da Gino"]);
     expect(searchClients(book, "gino@").map((p) => p.name)).toEqual(["Trattoria Da Gino"]);
     expect(searchClients(book, "zzz")).toEqual([]);
-    const ordered = dedupeClients([entry("a", 1, { name: "Gino Bar" }), entry("b", 2, { name: "Bar Gino" })]);
+    const ordered = dedupeClients([entry("a", 1, { name: "Gino Bar", city: "Pavia" }), entry("b", 2, { name: "Bar Gino", city: "Lodi" })]);
     expect(searchClients(ordered, "gino").map((p) => p.name)).toEqual(["Gino Bar", "Bar Gino"]);
   });
 

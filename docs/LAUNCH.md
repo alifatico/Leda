@@ -33,7 +33,7 @@ Team `alifaticos-projects` (piano Hobby), progetto `preventivo-lampo` (`prj_lj7t
 
 - URL pubblico: https://preventivo-lampo-amber.vercel.app. È anche `VERCEL_PROJECT_PRODUCTION_URL`, quindi `appUrl()`, sitemap e redirect di Stripe puntano lì finché non c'è un dominio custom.
 - Variabili già impostate: `LICENSE_SECRET` (production + preview, sensibile), `STRIPE_PRICE_SINGLE`, `STRIPE_PRICE_PRO_MONTHLY`, `STRIPE_PRICE_PRO_YEARLY`, `STRIPE_PORTAL_CONFIGURATION`, `BUSINESS_NAME`, `SUPPORT_EMAIL` (production).
-- Mancano e le può aggiungere solo il titolare da Settings → Environment Variables: `STRIPE_SECRET_KEY` (senza, `/api/config` risponde `payments: false` e si scarica solo il PDF con filigrana), `ANTHROPIC_API_KEY`, Upstash Redis dal marketplace (abilita "Invia al cliente"), `RESEND_API_KEY`, le altre `BUSINESS_*`, `NEXT_PUBLIC_PLAUSIBLE_DOMAIN`.
+- Mancano e le può aggiungere solo il titolare da Settings → Environment Variables: `STRIPE_SECRET_KEY` (senza, `/api/config` risponde `payments: false` e si scarica solo il PDF con filigrana), `ANTHROPIC_API_KEY`, Upstash Redis dal marketplace (abilita "Invia al cliente"), `RESEND_API_KEY`, `OPENAPI_COMPANY_TOKEN` (abilita la ricerca del cliente nel Registro Imprese), le altre `BUSINESS_*`, `NEXT_PUBLIC_PLAUSIBLE_DOMAIN`.
 - Dopo ogni modifica alle variabili serve un nuovo deploy (Deployments → ⋯ → Redeploy): vengono lette al build, non al volo.
 - Branch di produzione: su Vercel è `master`, il codice sta su `claude/amazing-thompson-wpeq5s` e il deploy di produzione è stato lanciato a mano da quel branch. Per i deploy automatici: Settings → Git → Production Branch = `claude/amazing-thompson-wpeq5s`, oppure merge su `master`.
 - Il piano Hobby vieta l'uso commerciale: passare a Pro prima di incassare.
@@ -70,6 +70,7 @@ Decisione: tutta la personalizzazione del documento è nel piano gratuito; si pa
 - [ ] `ANTHROPIC_API_KEY` con limite di spesa mensile impostato nella console Anthropic.
 - [ ] Upstash Redis dal marketplace Vercel (gratis): senza, il pulsante "Invia al cliente" non compare.
 - [ ] `RESEND_API_KEY` + dominio verificato: serve per gli avvisi di accettazione e per il recupero della chiave Pro.
+- [ ] `OPENAPI_COMPANY_TOKEN`: account su console.openapi.com, token con scope `company` (endpoint `IT-search` e `IT-start`), ricarica del wallet con avviso di credito basso. Prezzi di listino verificati il 9 ottobre 2026: autocomplete €0,001 a chiamata (100 gratuite al giorno), scheda `IT-start` €0,015 (30 gratuite al mese), IVA esclusa; circa 2 centesimi a cliente. `COMPANY_LOOKUP_DAILY_LIMIT` (default 2000) è il tetto di chiamate a pagamento al giorno. Senza token il campo cliente usa solo la rubrica del browser.
 
 ## Settimana 1 — distribuzione a costo zero
 

@@ -66,6 +66,20 @@ export const aiEnv = {
   enabled: () => Boolean(first(process.env.ANTHROPIC_API_KEY)) && process.env.AI_DRAFT_DISABLED !== "1",
 };
 
+/**
+ * Client lookup in the Italian business register through openapi.com
+ * (company.openapi.com). Hidden without a token; COMPANY_LOOKUP=mock serves
+ * canned companies for local development.
+ */
+export const companyEnv = {
+  token: () => first(process.env.OPENAPI_COMPANY_TOKEN),
+  sandbox: () => process.env.OPENAPI_COMPANY_SANDBOX === "1" || process.env.OPENAPI_COMPANY_SANDBOX === "true",
+  mock: () => process.env.COMPANY_LOOKUP === "mock",
+  enabled: () => process.env.COMPANY_LOOKUP !== "off" && (process.env.COMPANY_LOOKUP === "mock" || Boolean(first(process.env.OPENAPI_COMPANY_TOKEN))),
+  /** Hard cap of paid upstream calls per day across all users (cost control) */
+  dailyLimit: () => intEnv("COMPANY_LOOKUP_DAILY_LIMIT", 2000),
+};
+
 export const emailEnv = {
   resendApiKey: () => first(process.env.RESEND_API_KEY),
   from: () => first(process.env.EMAIL_FROM) ?? `${BRAND} <onboarding@resend.dev>`,
@@ -110,6 +124,8 @@ export type PublicConfig = {
   ai: boolean;
   /** "send to client" link + online acceptance (needs a KV store, see src/lib/store.ts) */
   sharing: boolean;
+  /** client search in the business register (needs OPENAPI_COMPANY_TOKEN, see src/lib/company.ts) */
+  companyLookup: boolean;
   pricing: Pricing;
   supportEmail: string;
   recovery: boolean;
@@ -126,6 +142,7 @@ export function publicConfig(): PublicConfig {
     payments: paymentsEnabled(),
     ai: aiEnv.enabled(),
     sharing: sharingConfigured(),
+    companyLookup: companyEnv.enabled(),
     pricing: getPricing(),
     supportEmail: businessEnv.supportEmail(),
     recovery: Boolean(emailEnv.resendApiKey()),

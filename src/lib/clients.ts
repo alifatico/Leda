@@ -40,22 +40,17 @@ export function hasDetails(p: Party): boolean {
 }
 
 /**
- * One client per name, most recent first. The latest version wins, except that a
- * bare name (typed by hand, nothing else) never replaces a card with details.
+ * One client per name, most recent first; the latest version wins. A bare name
+ * with nothing else (a draft abandoned half-way, a name typed by hand) is not a
+ * card worth suggesting and never shadows one that has details.
  */
 export function dedupeClients(entries: SavedClient[]): Party[] {
   const byName = new Map<string, SavedClient>();
   for (const e of entries) {
     const key = normalizeName(e.party.name);
-    if (!key) continue;
+    if (!key || !hasDetails(e.party)) continue;
     const cur = byName.get(key);
-    if (!cur) {
-      byName.set(key, e);
-      continue;
-    }
-    const rich = hasDetails(e.party);
-    const curRich = hasDetails(cur.party);
-    if (rich !== curRich ? rich : e.updatedAt > cur.updatedAt) byName.set(key, e);
+    if (!cur || e.updatedAt > cur.updatedAt) byName.set(key, e);
   }
   return [...byName.values()].sort((a, b) => b.updatedAt - a.updatedAt).map((e) => cleanParty(e.party));
 }

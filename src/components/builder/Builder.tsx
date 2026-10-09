@@ -137,18 +137,21 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ---- persistence: the quote list, the sender profile and the client address book move together
+  const persist = useCallback((q: Quote, unlockToken?: string, shareInfo?: ShareInfo) => {
+    quotesStore.save({ quote: q, unlock: unlockToken, share: shareInfo });
+    profileStore.updateFromQuote(q);
+    clientsStore.remember(q.id, q.client, q.updatedAt);
+    setQuotes(quotesStore.all());
+    setClientEntries(clientsStore.entries());
+  }, []);
+
   // ---- autosave
   useEffect(() => {
     if (!quote) return;
-    const id = setTimeout(() => {
-      quotesStore.save({ quote, unlock, share });
-      profileStore.updateFromQuote(quote);
-      clientsStore.remember(quote.id, quote.client, quote.updatedAt);
-      setQuotes(quotesStore.all());
-      setClientEntries(clientsStore.entries());
-    }, 350);
+    const id = setTimeout(() => persist(quote, unlock, share), 350);
     return () => clearTimeout(id);
-  }, [quote, unlock, share]);
+  }, [quote, unlock, share, persist]);
 
   const update = useCallback((patch: Partial<Quote>) => {
     setQuote((q) => (q ? { ...q, ...patch, updatedAt: Date.now() } : q));
@@ -164,7 +167,7 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
     setMobileTab("edit");
   };
   const createNew = () => {
-    if (quote) quotesStore.save({ quote, unlock, share });
+    if (quote) persist(quote, unlock, share);
     setQuote(createQuoteFromProfile());
     setUnlock(undefined);
     setShare(undefined);
@@ -208,7 +211,7 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
   const useTemplate = (id: string) => {
     const tpl = templates.find((x) => x.id === id);
     if (!tpl) return;
-    if (quote) quotesStore.save({ quote, unlock, share });
+    if (quote) persist(quote, unlock, share);
     track("template_use");
     setQuote(createQuoteFromSaved(tpl));
     setUnlock(undefined);
@@ -309,7 +312,7 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
     setBusyPlan(plan);
     track("checkout_start", { plan, source: "app" });
     try {
-      quotesStore.save({ quote, unlock, share });
+      persist(quote, unlock, share);
       const { url } = await api.checkout(plan, plan === "single" ? quote.id : undefined, locale);
       window.location.href = url;
     } catch (e) {
@@ -417,8 +420,14 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
           <Section k="sender" open={open.sender} onToggle={toggle} title={t("b.sections.sender")} right={<span className="text-xs text-slate-400">{t("b.senderHint")}</span>}>
             <PartyForm party={quote.sender} onChange={(p) => update({ sender: p })} isSender />
           </Section>
-          <Section k="client" open={open.client} onToggle={toggle} title={t("b.sections.client")} right={<span className="text-xs text-slate-400">{t("b.clientHint")}</span>}>
-            <PartyForm party={quote.client} onChange={(p) => update({ client: p })} book={clientBook} onForget={forgetClient} />
+          <Section
+            k="client"
+            open={open.client}
+            onToggle={toggle}
+            title={t("b.sections.client")}
+            right={<span className="text-xs text-slate-400">{t(config.companyLookup ? "b.clientHintLookup" : "b.clientHint")}</span>}
+          >
+            <PartyForm party={quote.client} onChange={(p) => update({ client: p })} book={clientBook} onForget={forgetClient} lookup={config.companyLookup} />
           </Section>
           <Section k="items" open={open.items} onToggle={toggle} title={t("b.sections.items")}>
             <ItemsEditor quote={quote} onChange={(items) => update({ items })} />

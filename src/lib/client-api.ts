@@ -1,6 +1,7 @@
 /* Browser-side helpers for the API routes. */
+import type { CompanyHit } from "./company";
 import type { PublicConfig, PlanId } from "./env";
-import type { LineItem, Quote } from "./quote";
+import type { LineItem, Party, Quote } from "./quote";
 import type { ShareOwnerView, SharePublic } from "./share";
 
 export class ApiError extends Error {
@@ -50,6 +51,12 @@ export const api = {
     call<{ ok: true }>("/api/license/recover", { method: "POST", body: JSON.stringify({ email, locale }) }),
 
   portal: (license: string) => call<{ url: string }>("/api/portal", { method: "POST", body: JSON.stringify({ license }) }),
+
+  /** Business-register lookup (hidden when the server has no provider token). */
+  company: {
+    search: (q: string, signal?: AbortSignal) => call<{ hits: CompanyHit[] }>(`/api/company/search?q=${encodeURIComponent(q)}`, { signal }),
+    get: (id: string, signal?: AbortSignal) => call<{ party: Party }>(`/api/company/${encodeURIComponent(id)}`, { signal }),
+  },
 
   aiDraft: (args: { brief: string; lang: "it" | "en"; currency: string; forfettario: boolean }) =>
     call<{ subject: string; notes: string; paymentTerms: string; items: LineItem[] }>("/api/ai/draft", {

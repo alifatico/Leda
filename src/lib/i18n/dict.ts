@@ -200,9 +200,15 @@ export const it = {
     },
     senderHint: "Li ricordiamo per i prossimi preventivi.",
     clientHint: "I clienti già usati si compilano da soli.",
+    clientHintLookup: "Scrivi la ragione sociale: la cerchiamo nel Registro Imprese.",
     clientBook: {
       title: "Clienti già usati",
       forget: "Dimentica questo cliente",
+      registry: "Registro Imprese",
+      searching: "Cerco nel Registro Imprese…",
+      noResults: "Nessuna impresa trovata con questo nome. Puoi anche scrivere la Partita IVA (11 cifre).",
+      unavailable: "Ricerca nel Registro Imprese non disponibile al momento.",
+      filling: "Recupero i dati…",
     },
     previewEdit: "Modifica modello e stile",
     f: {
@@ -667,9 +673,15 @@ export const en: Shape<typeof it> = {
     },
     senderHint: "We remember them for your next quotes.",
     clientHint: "Clients you already used fill in by themselves.",
+    clientHintLookup: "Type the company name: we look it up in the Italian business register.",
     clientBook: {
       title: "Clients you already used",
       forget: "Forget this client",
+      registry: "Business register",
+      searching: "Searching the business register…",
+      noResults: "No company found with this name. You can also type the VAT number (11 digits).",
+      unavailable: "Business register lookup is unavailable right now.",
+      filling: "Fetching details…",
     },
     previewEdit: "Edit template and style",
     f: {
