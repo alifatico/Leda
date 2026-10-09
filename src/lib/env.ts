@@ -40,6 +40,8 @@ export const stripeEnv = {
     proYearly: first(process.env.STRIPE_PRICE_PRO_YEARLY),
   }),
   automaticTax: () => process.env.STRIPE_AUTOMATIC_TAX === "1" || process.env.STRIPE_AUTOMATIC_TAX === "true",
+  /** Optional Customer Portal configuration id (bpc_…); otherwise Stripe uses the account default */
+  portalConfiguration: () => first(process.env.STRIPE_PORTAL_CONFIGURATION),
   collectTaxId: () => process.env.STRIPE_COLLECT_TAX_ID !== "0" && process.env.STRIPE_COLLECT_TAX_ID !== "false",
 };
 

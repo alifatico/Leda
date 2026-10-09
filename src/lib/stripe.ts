@@ -182,9 +182,11 @@ export async function findActiveSubscriptionByEmail(
 export async function createPortalSession(customerId: string): Promise<string> {
   const stripe = getStripe();
   if (!stripe) throw new Error("Stripe is not configured");
+  const configuration = stripeEnv.portalConfiguration();
   const portal = await stripe.billingPortal.sessions.create({
     customer: customerId,
     return_url: `${appUrl()}/app`,
+    ...(configuration ? { configuration } : {}),
   });
   return portal.url;
 }

@@ -2,10 +2,35 @@
 
 Obiettivo: primi 100 € nel mese 1, 300–1.000 €/mese entro 6 mesi, con costi fissi limitati all'hosting (il piano Hobby di Vercel non ammette uso commerciale: serve Vercel Pro o un host equivalente).
 
+## Stripe live: già configurato il 9 ottobre 2026
+
+Account `acct_1UOYYfPFKsiVAwzR` (Italia). Oggetti creati via API, modalità live:
+
+| Oggetto | ID | Note |
+| --- | --- | --- |
+| Prodotto "Preventivo PDF" | `prod_VPObSQN3pQQiKO` | una tantum |
+| Prezzo singolo 4,90 € | `price_1UOZoqPFKsiVAwzRTw5zFvO7` | lookup key `preventivo_lampo_single_490`, IVA inclusa |
+| Prodotto "Preventivo Lampo Pro" | `prod_VPOb9C3BcJui42` | abbonamento |
+| Prezzo Pro mensile 9 € | `price_1UOZoqPFKsiVAwzRyziMzjj0` | lookup key `preventivo_lampo_pro_monthly_900` |
+| Prezzo Pro annuale 59 € | `price_1UOZoqPFKsiVAwzRN08eCMSv` | lookup key `preventivo_lampo_pro_yearly_5900` |
+| Customer Portal | `bpc_1UOZoqPFKsiVAwzRz4ajvCKA` | predefinito: disdetta a fine periodo, cambio carta, fatture, aggiornamento dati e P.IVA |
+
+Variabili d'ambiente da impostare su Vercel per usare questo catalogo (solo con la chiave live):
+
+```
+STRIPE_SECRET_KEY=sk_live_…            # solo tu puoi copiarla dal dashboard
+STRIPE_PRICE_SINGLE=price_1UOZoqPFKsiVAwzRTw5zFvO7
+STRIPE_PRICE_PRO_MONTHLY=price_1UOZoqPFKsiVAwzRyziMzjj0
+STRIPE_PRICE_PRO_YEARLY=price_1UOZoqPFKsiVAwzRN08eCMSv
+STRIPE_PORTAL_CONFIGURATION=bpc_1UOZoqPFKsiVAwzRz4ajvCKA
+```
+
+Con una chiave di test (`sk_test_…`) lascia vuote le variabili `STRIPE_PRICE_*`: l'app crea i prezzi al volo. Il nome pubblico dell'account Stripe risulta "PreventivoFacile": allinealo a "Preventivo Lampo" in Stripe → Settings → Public details, perché compare su ricevute ed estratti conto, e "Preventivi Facili" è già il nome di un'app concorrente.
+
 ## Giorno 0 — mettere in produzione (1 ora)
 
 - [ ] Dominio: `preventivolampo.it` (o `.com`) → Vercel. Verifica disponibilità e marchio prima di registrare.
-- [ ] Stripe live: chiave `sk_live_…`, Customer Portal attivo, ricevute email attive (Settings → Emails).
+- [ ] Stripe live: chiave `sk_live_…` su Vercel (catalogo e portale già creati, vedi sopra), ricevute email attive (Settings → Emails).
 - [ ] Variabili `BUSINESS_*`, `SUPPORT_EMAIL`: compaiono in footer, privacy e termini (obbligatorie per vendere online in Italia).
 - [ ] Pagamento di prova reale da 4,90 € con la tua carta, poi rimborso dal dashboard.
 - [ ] Google Search Console + Plausible (`NEXT_PUBLIC_PLAUSIBLE_DOMAIN`).
