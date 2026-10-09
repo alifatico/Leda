@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { track } from "@/lib/analytics";
 import { api, ApiError, downloadBlob, formatPrice } from "@/lib/client-api";
 import type { PlanId, PublicConfig } from "@/lib/env";
@@ -89,6 +89,7 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
   const [aiOpen, setAiOpen] = useState(false);
   const [proOpen, setProOpen] = useState(false);
   const [drawer, setDrawer] = useState(false);
+  const designRef = useRef<HTMLDivElement>(null);
 
   // ---- bootstrap: storage, URL params, fresh config
   useEffect(() => {
@@ -329,6 +330,11 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
   const paidLabel = license.status === "active" ? t("b.downloadPro") : unlock ? t("b.downloadUnlocked") : t("b.downloadPaid", { price: priceLabel });
 
   const toggle = (k: SectionKey) => setOpen((o) => ({ ...o, [k]: !o[k] }));
+  const goToDesign = () => {
+    setOpen((o) => ({ ...o, design: true }));
+    setMobileTab("edit");
+    setTimeout(() => designRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
@@ -385,6 +391,9 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
             <Button variant="secondary" onClick={createNew}>
               <Icon name="plus" className="h-4 w-4" /> {t("b.newQuote")}
             </Button>
+            <Button variant="secondary" onClick={goToDesign}>
+              <Icon name="star" className="h-4 w-4" /> {t("b.sections.design")}
+            </Button>
           </div>
 
           <Section k="details" open={open.details} onToggle={toggle} title={t("b.sections.details")}>
@@ -415,9 +424,11 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
           <Section k="branding" open={open.branding} onToggle={toggle} title={t("b.sections.branding")}>
             <BrandingForm branding={quote.branding} onChange={(b) => update({ branding: b })} />
           </Section>
-          <Section k="design" open={open.design} onToggle={toggle} title={t("b.sections.design")}>
-            <DesignForm quote={quote} onChange={update} onSaveTemplate={saveTemplate} />
-          </Section>
+          <div ref={designRef} className="scroll-mt-20">
+            <Section k="design" open={open.design} onToggle={toggle} title={t("b.sections.design")}>
+              <DesignForm quote={quote} onChange={update} onSaveTemplate={saveTemplate} />
+            </Section>
+          </div>
         </div>
 
         {/* preview */}

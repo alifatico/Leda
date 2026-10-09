@@ -253,9 +253,9 @@ export function QuoteDocument({ quote, watermark, siteUrl }: Props) {
             {logo ? (
               // eslint-disable-next-line jsx-a11y/alt-text
               <Image src={logo} style={st.coverLogo} />
-            ) : (
-              <Text style={st.coverSender}>{senderName || L.quote}</Text>
-            )}
+            ) : senderName ? (
+              <Text style={st.coverSender}>{senderName}</Text>
+            ) : null}
           </View>
           <View style={st.coverBody}>
             <Text style={st.coverKicker}>
@@ -298,9 +298,9 @@ export function QuoteDocument({ quote, watermark, siteUrl }: Props) {
               {logo ? (
                 // eslint-disable-next-line jsx-a11y/alt-text
                 <Image src={logo} style={st.logo} />
-              ) : (
-                <Text style={st.bandName}>{senderName || L.quote}</Text>
-              )}
+              ) : senderName ? (
+                <Text style={st.bandName}>{senderName}</Text>
+              ) : null}
             </View>
             <View>
               <Text style={st.bandTitle}>{L.quote}</Text>
@@ -312,9 +312,9 @@ export function QuoteDocument({ quote, watermark, siteUrl }: Props) {
             {logo ? (
               // eslint-disable-next-line jsx-a11y/alt-text
               <Image src={logo} style={st.logo} />
-            ) : (
-              <Text style={[st.senderName, { color }]}>{senderName || L.quote}</Text>
-            )}
+            ) : senderName ? (
+              <Text style={[st.senderName, { color }]}>{senderName}</Text>
+            ) : null}
             <Text style={[st.docTitleCentered, { color }]}>{L.quote}</Text>
             <View style={[st.rule, { backgroundColor: color }]} />
             <Text style={st.metaInline}>
@@ -328,9 +328,9 @@ export function QuoteDocument({ quote, watermark, siteUrl }: Props) {
               {logo ? (
                 // eslint-disable-next-line jsx-a11y/alt-text
                 <Image src={logo} style={st.logo} />
-              ) : (
-                <Text style={[st.senderName, { color }]}>{senderName || L.quote}</Text>
-              )}
+              ) : senderName ? (
+                <Text style={[st.senderName, { color }]}>{senderName}</Text>
+              ) : null}
             </View>
             <View>
               <Text style={[st.docTitle, { color }]}>{L.quote}</Text>

@@ -37,7 +37,7 @@ export function QuotePreview({ quote, watermark = false, className = "" }: { quo
   const fontSize = d.tokens.fontSize === 8.5 ? 10 : d.tokens.fontSize === 10 ? 11.5 : 11;
   const rounded = d.tokens.rounded ? "rounded" : "";
   const filledTh = d.tokens.tableHeader === "filled";
-  const senderName = quote.sender.name || L.quote;
+  const senderName = quote.sender.name;
   const senderContact = [quote.sender.name, ...addressLines(quote.sender), quote.sender.email, quote.sender.phone].filter(Boolean).join(" · ");
 
   const watermarkEl = watermark ? (
@@ -55,9 +55,9 @@ export function QuotePreview({ quote, watermark = false, className = "" }: { quo
             {quote.branding.logo ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={quote.branding.logo} alt="" className="max-h-14 max-w-[170px] object-contain" />
-            ) : (
+            ) : senderName ? (
               <div className="text-xl font-bold text-white">{senderName}</div>
-            )}
+            ) : null}
           </div>
           <div className="relative px-8 pt-12 sm:px-10">
             <div className="text-[10px] uppercase tracking-[0.15em] text-slate-600">
@@ -91,9 +91,9 @@ export function QuotePreview({ quote, watermark = false, className = "" }: { quo
                 {quote.branding.logo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={quote.branding.logo} alt="" className="max-h-14 max-w-[160px] object-contain" />
-                ) : (
+                ) : senderName ? (
                   <div className="text-lg font-bold">{senderName}</div>
-                )}
+                ) : null}
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold tracking-widest">{L.quote}</div>
@@ -109,11 +109,11 @@ export function QuotePreview({ quote, watermark = false, className = "" }: { quo
               {quote.branding.logo ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={quote.branding.logo} alt="" className="max-h-14 max-w-[160px] object-contain" />
-              ) : (
+              ) : senderName ? (
                 <div className="text-lg font-bold" style={{ color }}>
                   {senderName}
                 </div>
-              )}
+              ) : null}
               <div className="mt-2 text-3xl font-bold tracking-[0.2em]" style={{ color }}>
                 {L.quote}
               </div>
@@ -129,11 +129,11 @@ export function QuotePreview({ quote, watermark = false, className = "" }: { quo
                 {quote.branding.logo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={quote.branding.logo} alt="" className="max-h-14 max-w-[160px] object-contain" />
-                ) : (
+                ) : senderName ? (
                   <div className="text-lg font-bold" style={{ color }}>
                     {senderName}
                   </div>
-                )}
+                ) : null}
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold tracking-widest" style={{ color }}>
