@@ -71,6 +71,42 @@ export type QuoteOptions = {
   vatExemptNote?: string;
 };
 
+export type StyleId = "classico" | "moderno" | "essenziale" | "elegante" | "compatto";
+
+/** Printed wording the user may override (document language applies to the defaults). */
+export type LabelOverrides = {
+  title?: string;
+  from?: string;
+  to?: string;
+  subject?: string;
+  notes?: string;
+  paymentTerms?: string;
+  acceptance?: string;
+  signature?: string;
+  total?: string;
+  netPayable?: string;
+};
+
+/**
+ * How the document looks and which blocks it carries. Everything is optional:
+ * a quote without `design` renders exactly like before ("classico").
+ */
+export type QuoteDesign = {
+  style?: StyleId;
+  /** Columns of the items table; description and amount are always shown */
+  columns?: { qty?: boolean; unitPrice?: boolean; vat?: boolean };
+  labels?: LabelOverrides;
+  /** Free text printed before the items, e.g. a short cover letter */
+  intro?: string;
+  /** Free text printed at the end, e.g. bank details and legal notes */
+  closing?: string;
+  /** Optional first page */
+  cover?: { enabled: boolean; title?: string; subtitle?: string; image?: string };
+  /** Signature block and validity line in the acceptance row (default true) */
+  showSignature?: boolean;
+  showValidity?: boolean;
+};
+
 export type Branding = {
   /** Accent colour used in the PDF, hex */
   color: string;
@@ -97,6 +133,7 @@ export type Quote = {
   paymentTerms?: string;
   options: QuoteOptions;
   branding: Branding;
+  design?: QuoteDesign;
   createdAt: number;
   updatedAt: number;
 };

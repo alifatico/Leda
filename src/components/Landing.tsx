@@ -144,7 +144,7 @@ export function Landing({ config, businessName }: { config: PublicConfig; busine
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {(["signup", "first", "price", "ai", "tax", "share", "einvoice", "data"] as const).map((row) => (
+                {(["signup", "first", "price", "ai", "tax", "template", "share", "einvoice", "data"] as const).map((row) => (
                   <tr key={row}>
                     <th className="px-4 py-3 text-left font-medium text-slate-900">{t(`compare.rows.${row}`)}</th>
                     <td className="bg-indigo-50/60 px-4 py-3 font-medium text-indigo-900">{t(`compare.rows.${row}Us`)}</td>

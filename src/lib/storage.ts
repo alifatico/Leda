@@ -36,7 +36,15 @@ export type Profile = {
 
 export type StoredLicense = { token: string; exp: number; plan: "monthly" | "yearly"; email?: string | null };
 
-const KEYS = { quotes: "pl.quotes.v1", profile: "pl.profile.v1", license: "pl.license.v1" } as const;
+const KEYS = { quotes: "pl.quotes.v1", profile: "pl.profile.v1", license: "pl.license.v1", templates: "pl.templates.v1" } as const;
+
+/** A quote saved as a reusable starting point: look, texts, items and options, never the client. */
+export type SavedTemplate = {
+  id: string;
+  name: string;
+  createdAt: number;
+  data: Pick<Quote, "lang" | "currency" | "validityDays" | "subject" | "items" | "notes" | "paymentTerms" | "options" | "branding" | "design">;
+};
 
 function read<T>(key: string): T | null {
   if (typeof window === "undefined") return null;
@@ -115,6 +123,63 @@ export const profileStore = {
     this.save(next);
   },
 };
+
+export const templatesStore = {
+  all(): SavedTemplate[] {
+    const list = read<SavedTemplate[]>(KEYS.templates) ?? [];
+    return list.filter((t) => t && t.id && t.data).sort((a, b) => b.createdAt - a.createdAt);
+  },
+  save(tpl: SavedTemplate): void {
+    const list = this.all().filter((t) => t.id !== tpl.id);
+    list.unshift(tpl);
+    write(KEYS.templates, list.slice(0, 50));
+  },
+  remove(id: string): void {
+    write(
+      KEYS.templates,
+      this.all().filter((t) => t.id !== id),
+    );
+  },
+};
+
+export function templateFromQuote(q: Quote, name: string): SavedTemplate {
+  return {
+    id: newId(),
+    name,
+    createdAt: Date.now(),
+    data: {
+      lang: q.lang,
+      currency: q.currency,
+      validityDays: q.validityDays,
+      subject: q.subject,
+      items: q.items.map((i) => ({ ...i })),
+      notes: q.notes,
+      paymentTerms: q.paymentTerms,
+      options: { ...q.options },
+      branding: { ...q.branding },
+      design: q.design ? { ...q.design } : undefined,
+    },
+  };
+}
+
+/** New quote from a saved template, with fresh ids and number and the profile's sender. */
+export function createQuoteFromSaved(tpl: SavedTemplate): Quote {
+  const base = createQuoteFromProfile();
+  const d = tpl.data;
+  return {
+    ...base,
+    lang: d.lang,
+    currency: d.currency,
+    validityDays: d.validityDays,
+    subject: d.subject ?? "",
+    items: d.items.length ? d.items.map((i) => ({ ...i, id: newId() })) : base.items,
+    notes: d.notes ?? "",
+    paymentTerms: d.paymentTerms ?? "",
+    options: { ...d.options },
+    branding: { ...d.branding },
+    design: d.design ? { ...d.design } : undefined,
+  };
+}
 
 export const licenseStore = {
   get(): StoredLicense | null {

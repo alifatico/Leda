@@ -51,6 +51,26 @@ const brandingSchema = z.object({
     .optional(),
 });
 
+const dataImage = z
+  .string()
+  .max(700_000)
+  .regex(/^data:image\/(png|jpeg|jpg);base64,[A-Za-z0-9+/=]+$/);
+
+const label = z.string().max(60).optional();
+
+const designSchema = z.object({
+  style: z.enum(["classico", "moderno", "essenziale", "elegante", "compatto"]).optional(),
+  columns: z.object({ qty: z.boolean().optional(), unitPrice: z.boolean().optional(), vat: z.boolean().optional() }).optional(),
+  labels: z
+    .object({ title: label, from: label, to: label, subject: label, notes: label, paymentTerms: label, acceptance: label, signature: label, total: label, netPayable: label })
+    .optional(),
+  intro: z.string().max(3000).optional(),
+  closing: z.string().max(3000).optional(),
+  cover: z.object({ enabled: z.boolean(), title: z.string().max(200).optional(), subtitle: z.string().max(300).optional(), image: dataImage.optional() }).optional(),
+  showSignature: z.boolean().optional(),
+  showValidity: z.boolean().optional(),
+});
+
 export const quoteSchema = z.object({
   id: z.string().min(1).max(64),
   version: z.literal(1),
@@ -67,6 +87,7 @@ export const quoteSchema = z.object({
   paymentTerms: z.string().max(2000).optional(),
   options: optionsSchema,
   branding: brandingSchema,
+  design: designSchema.optional(),
   createdAt: z.number(),
   updatedAt: z.number(),
 });

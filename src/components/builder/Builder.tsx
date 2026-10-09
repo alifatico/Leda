@@ -8,13 +8,25 @@ import { api, ApiError, downloadBlob, formatPrice } from "@/lib/client-api";
 import type { PlanId, PublicConfig } from "@/lib/env";
 import { useLocale } from "@/lib/i18n/context";
 import { applyPreset, hasPreset, type LineItem, newId, nextQuoteNumber, type Quote } from "@/lib/quote";
-import { createQuoteFromProfile, createQuoteFromTemplate, profileStore, quotesStore, type ShareInfo, type StoredQuote } from "@/lib/storage";
+import {
+  createQuoteFromProfile,
+  createQuoteFromSaved,
+  createQuoteFromTemplate,
+  profileStore,
+  quotesStore,
+  templateFromQuote,
+  templatesStore,
+  type SavedTemplate,
+  type ShareInfo,
+  type StoredQuote,
+} from "@/lib/storage";
 import { LocaleSwitch } from "../LocaleSwitch";
 import { QuotePreview } from "../QuotePreview";
 import { Logo } from "../SiteChrome";
 import { Badge, Button, Field, Icon, Textarea, Toast, cx, useToast } from "../ui";
 import { AiDraftModal } from "./AiDraftModal";
 import { BrandingForm } from "./BrandingForm";
+import { DesignForm } from "./DesignForm";
 import { ItemsEditor } from "./ItemsEditor";
 import { DetailsForm, OptionsForm } from "./OptionsForm";
 import { PartyForm } from "./PartyForm";
@@ -24,7 +36,7 @@ import { QuotesDrawer } from "./QuotesDrawer";
 import { ShareModal } from "./ShareModal";
 import { useLicense } from "./useLicense";
 
-type SectionKey = "details" | "sender" | "client" | "items" | "options" | "notes" | "branding";
+type SectionKey = "details" | "sender" | "client" | "items" | "options" | "notes" | "branding" | "design";
 
 function Section({
   k,
@@ -68,7 +80,8 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
   const [share, setShare] = useState<ShareInfo | undefined>(undefined);
   const [shareOpen, setShareOpen] = useState(false);
   const [quotes, setQuotes] = useState<StoredQuote[]>([]);
-  const [open, setOpen] = useState<Record<SectionKey, boolean>>({ details: true, sender: true, client: true, items: true, options: false, notes: false, branding: false });
+  const [templates, setTemplates] = useState<SavedTemplate[]>([]);
+  const [open, setOpen] = useState<Record<SectionKey, boolean>>({ details: true, sender: true, client: true, items: true, options: false, notes: false, branding: false, design: false });
   const [mobileTab, setMobileTab] = useState<"edit" | "preview">("edit");
   const [busy, setBusy] = useState<"free" | "paid" | null>(null);
   const [busyPlan, setBusyPlan] = useState<PlanId | null>(null);
@@ -85,6 +98,7 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
       if (cancelled) return;
       const all = quotesStore.all();
       setQuotes(all);
+      setTemplates(templatesStore.all());
       const wanted = searchParams.get("doc");
       const template = searchParams.get("template");
       const preset = !template && hasPreset(searchParams);
@@ -174,6 +188,30 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
         setShare(undefined);
       }
     }
+  };
+
+  const saveTemplate = (name: string) => {
+    if (!quote) return;
+    templatesStore.save(templateFromQuote(quote, name));
+    setTemplates(templatesStore.all());
+    track("template_save");
+    show(t("b.design.saved"), "success");
+  };
+  const useTemplate = (id: string) => {
+    const tpl = templates.find((x) => x.id === id);
+    if (!tpl) return;
+    if (quote) quotesStore.save({ quote, unlock, share });
+    track("template_use");
+    setQuote(createQuoteFromSaved(tpl));
+    setUnlock(undefined);
+    setShare(undefined);
+    setDrawer(false);
+    setMobileTab("edit");
+  };
+  const removeTemplate = (id: string) => {
+    if (!window.confirm(t("b.design.deleteTemplateConfirm"))) return;
+    templatesStore.remove(id);
+    setTemplates(templatesStore.all());
   };
 
   const applyDraft = (d: { subject: string; notes: string; paymentTerms: string; items: LineItem[] }, mode: "replace" | "append") => {
@@ -377,6 +415,9 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
           <Section k="branding" open={open.branding} onToggle={toggle} title={t("b.sections.branding")}>
             <BrandingForm branding={quote.branding} onChange={(b) => update({ branding: b })} />
           </Section>
+          <Section k="design" open={open.design} onToggle={toggle} title={t("b.sections.design")}>
+            <DesignForm quote={quote} onChange={update} onSaveTemplate={saveTemplate} />
+          </Section>
         </div>
 
         {/* preview */}
@@ -439,7 +480,19 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
         onShareChange={setShare}
         notify={show}
       />
-      <QuotesDrawer open={drawer} onClose={() => setDrawer(false)} quotes={quotes} currentId={quote.id} onSelect={selectQuote} onNew={createNew} onDuplicate={duplicate} onDelete={remove} />
+      <QuotesDrawer
+        open={drawer}
+        onClose={() => setDrawer(false)}
+        quotes={quotes}
+        currentId={quote.id}
+        onSelect={selectQuote}
+        onNew={createNew}
+        onDuplicate={duplicate}
+        onDelete={remove}
+        templates={templates}
+        onUseTemplate={useTemplate}
+        onDeleteTemplate={removeTemplate}
+      />
       <Toast message={toast?.message ?? null} tone={toast?.tone} />
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useLocale } from "@/lib/i18n/context";
 import { computeTotals, formatMoney } from "@/lib/quote";
-import type { StoredQuote } from "@/lib/storage";
+import type { SavedTemplate, StoredQuote } from "@/lib/storage";
 import { Badge, Button, Icon, Modal } from "../ui";
 
 export function QuotesDrawer({
@@ -14,6 +14,9 @@ export function QuotesDrawer({
   onNew,
   onDuplicate,
   onDelete,
+  templates,
+  onUseTemplate,
+  onDeleteTemplate,
 }: {
   open: boolean;
   onClose: () => void;
@@ -23,6 +26,9 @@ export function QuotesDrawer({
   onNew: () => void;
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
+  templates: SavedTemplate[];
+  onUseTemplate: (id: string) => void;
+  onDeleteTemplate: (id: string) => void;
 }) {
   const { t, locale } = useLocale();
   const fmtDate = (ms: number) => new Intl.DateTimeFormat(locale === "it" ? "it-IT" : "en-GB", { dateStyle: "medium" }).format(new Date(ms));
@@ -31,6 +37,29 @@ export function QuotesDrawer({
       <Button className="mb-3 w-full" onClick={onNew}>
         <Icon name="plus" className="h-4 w-4" /> {t("b.newQuote")}
       </Button>
+      {templates.length > 0 ? (
+        <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{t("b.design.myTemplates")}</div>
+          <ul className="divide-y divide-slate-200">
+            {templates.map((tpl) => (
+              <li key={tpl.id} className="flex items-center gap-2 py-2">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium text-slate-900">{tpl.name}</div>
+                  <div className="truncate text-xs text-slate-500">
+                    {tpl.data.subject || "—"} · {tpl.data.items.length} {t("b.sections.items").toLowerCase()} · {fmtDate(tpl.createdAt)}
+                  </div>
+                </div>
+                <Button size="sm" variant="secondary" onClick={() => onUseTemplate(tpl.id)}>
+                  {t("b.design.use")}
+                </Button>
+                <button className="rounded p-1.5 text-red-500 hover:bg-red-50" onClick={() => onDeleteTemplate(tpl.id)} title={t("b.delete")}>
+                  <Icon name="trash" className="h-4 w-4" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       {quotes.length === 0 ? <p className="text-sm text-slate-500">{t("b.noQuotes")}</p> : null}
       <ul className="divide-y divide-slate-100">
         {quotes.map((s) => {

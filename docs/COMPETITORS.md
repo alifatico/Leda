@@ -32,6 +32,18 @@ Fonti: pagine ufficiali e confronti pubblici consultati l'8 ottobre 2026 (link i
 | "preventivo prestazione occasionale" | Fac simile statici | Sì: `/preventivo-prestazione-occasionale` + modalità dedicata nel motore |
 | "preventivo <professione>" | Post di blog | Sì: le 20 pagine `/preventivo/<slug>` hanno il tool dentro |
 
+## Personalizzazione del documento (verifica del 10 ottobre 2026)
+
+| Concorrente | Cosa offre | Dove |
+| --- | --- | --- |
+| FaiPreventivo | 36 modelli, 28 copertine, stili con nome (font, colori, tabella, totali, firma); niente editor né campi custom | Tutti i piani a pagamento, da 8,99 €/mese |
+| Fatture in Cloud | 10+ modelli, logo, colore, font, note a piè di pagina; editor HTML del modello | Editor solo Premium / Premium Plus |
+| PrevAI | Nessun modello, layout fisso con logo | 19-79 €/mese |
+| Zoho Invoice, Canva | Logo, colori, font, etichette, coordinate bancarie; Canva libertà totale senza calcoli | Gratis |
+| PandaDoc, Proposify, Qwilr | Proposte editabili con copertina, sezioni, firma | 19-49 $/utente/mese, solo in inglese |
+
+Conclusione: scegliere uno stile è lo standard, non un vantaggio. Il vantaggio è il documento modificabile (copertina, lettera, etichette, colonne, modelli salvati) con il motore fiscale e il link di accettazione, gratis: nessun concorrente italiano lo offre sotto i 19 €/mese.
+
 ## Rischi
 
 - Fatture in Cloud o FaiPreventivo potrebbero aggiungere un piano "solo preventivi" o la bozza AI gratuita: il nostro vantaggio difendibile resta l'assenza di attrito (zero registrazione, 60 secondi al PDF) e i contenuti SEO per professione.

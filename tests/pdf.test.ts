@@ -54,3 +54,29 @@ describe("PDF rendering", () => {
     expect(sanitizeForPdf(undefined)).toBe("");
   });
 });
+
+describe("PDF styles and editable template", () => {
+  it("renders every style, with cover, intro, closing, hidden columns and custom labels", async () => {
+    const { STYLE_IDS } = await import("@/lib/quote");
+    for (const style of STYLE_IDS) {
+      const q = sampleQuote("it");
+      q.options = { ...q.options, rivalsaInpsPct: 4, ritenutaAccontoPct: 20, depositPct: 30 };
+      q.design = {
+        style,
+        columns: { qty: style !== "compatto", unitPrice: true, vat: style !== "essenziale" },
+        labels: { title: "OFFERTA", to: "Preparato per", netPayable: "Da pagare" },
+        intro: "Gentile Sig. Gino,\ncome concordato le invio la nostra proposta per il nuovo sito e l'identità visiva.",
+        closing: "Coordinate bancarie: IT60 X054 2811 1010 0000 0123 456 intestato a Studio Rossi Design.",
+        cover: { enabled: style === "moderno" || style === "elegante", title: "Sito web e identità visiva", subtitle: "Proposta per Trattoria Da Gino" },
+        showSignature: style !== "compatto",
+      };
+      const pdf = await renderQuotePdf(q, { watermark: style === "classico", siteUrl: "https://example.com" });
+      dump(`style-${style}.pdf`, pdf);
+      const text = Buffer.from(pdf).toString("latin1");
+      const pages = (text.match(/\/Type \/Page[^s]/g) ?? []).length;
+      expect(text.slice(0, 5)).toBe("%PDF-");
+      expect(pages).toBeGreaterThanOrEqual(q.design.cover?.enabled ? 2 : 1);
+      expect(pages).toBeLessThanOrEqual(3);
+    }
+  }, 60000);
+});

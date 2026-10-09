@@ -50,6 +50,15 @@ Team `alifaticos-projects` (piano Hobby), progetto `preventivo-lampo` (`prj_lj7t
 - Motore: modalità "prestazione occasionale" (niente IVA, ritenuta 20%, bollo, diciture) e distinzione rivalsa INPS / contributo integrativo di cassa (fuori dalla ritenuta), con test.
 - Prossimi contenuti a costo zero: pagine per città sulle professioni artigiane solo quando le pagine professione portano traffico; 3 articoli "come fare un preventivo per <settore>" linkati dalle guide.
 
+## Editor del modello: gratis, con filigrana (10 ottobre 2026)
+
+Decisione: tutta la personalizzazione del documento è nel piano gratuito; si paga solo il PDF senza filigrana (singolo o Pro). Motivo: FaiPreventivo include 36 modelli e 28 copertine dal piano Starter, Fatture in Cloud ha 10+ modelli in ogni piano, Zoho e Canva regalano la personalizzazione; farla pagare non differenzia, mentre un editor gratuito con il motore fiscale sotto è l'unica cosa che oggi nessuno offre in italiano.
+
+- Cinque stili (`src/lib/quote/styles.ts`): classico, moderno (banda), essenziale (solo linee), elegante (serif, titolo centrato), compatto.
+- Modello modificabile (`quote.design`): colonne, etichette, testo introduttivo, testo finale, copertina con immagine, firma e validità.
+- Modelli salvati dall'utente nel browser (`templatesStore`), riutilizzabili da "I miei preventivi".
+- Prossimo passo coerente: pagine SEO "modello preventivo <stile>" e la copertina come gancio per agenzie e consulenti (proposte).
+
 ## Giorno 0 — mettere in produzione (1 ora)
 
 - [x] Progetto Vercel creato, variabili non segrete impostate, primo deploy di produzione online (vedi sopra).
