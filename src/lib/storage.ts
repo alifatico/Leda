@@ -1,4 +1,5 @@
 /* localStorage persistence. Everything the user creates lives only in their browser. */
+import { cleanParty, normalizeName, type SavedClient } from "./clients";
 import { newId, nextQuoteNumber, newQuote, type Party, type Quote, type QuoteOptions, type Branding, type DocLang } from "./quote";
 import { getProfession, templateItems } from "./professions";
 
@@ -36,7 +37,9 @@ export type Profile = {
 
 export type StoredLicense = { token: string; exp: number; plan: "monthly" | "yearly"; email?: string | null };
 
-const KEYS = { quotes: "pl.quotes.v1", profile: "pl.profile.v1", license: "pl.license.v1", templates: "pl.templates.v1" } as const;
+const KEYS = { quotes: "pl.quotes.v1", profile: "pl.profile.v1", license: "pl.license.v1", templates: "pl.templates.v1", clients: "pl.clients.v1" } as const;
+
+const MAX_CLIENTS = 300;
 
 /** A quote saved as a reusable starting point: look, texts, items and options, never the client. */
 export type SavedTemplate = {
@@ -138,6 +141,48 @@ export const templatesStore = {
     write(
       KEYS.templates,
       this.all().filter((t) => t.id !== id),
+    );
+  },
+};
+
+/**
+ * Address book of the clients used so far: one entry per quote, kept even after
+ * the quote is deleted. `dedupeClients()` (src/lib/clients.ts) turns it into the
+ * list shown while typing a client name.
+ */
+export const clientsStore = {
+  entries(): SavedClient[] {
+    const list = read<SavedClient[]>(KEYS.clients) ?? [];
+    return list.filter((e) => e && e.quoteId && e.party && typeof e.party.name === "string");
+  },
+  /** Called on autosave: the entry for this quote always mirrors its current client. */
+  remember(quoteId: string, party: Party, updatedAt: number = Date.now()): void {
+    const all = this.entries();
+    const rest = all.filter((e) => e.quoteId !== quoteId);
+    if (!party.name.trim()) {
+      // name cleared: no half-empty card for this quote
+      if (rest.length !== all.length) write(KEYS.clients, rest);
+      return;
+    }
+    write(KEYS.clients, [{ quoteId, party: cleanParty(party), updatedAt }, ...rest].slice(0, MAX_CLIENTS));
+  },
+  /** Import the clients of quotes written before the address book existed. */
+  seedFromQuotes(quotes: StoredQuote[]): void {
+    const have = new Set(this.entries().map((e) => e.quoteId));
+    const missing = quotes.filter((s) => !have.has(s.quote.id) && typeof s.quote.client?.name === "string" && s.quote.client.name.trim());
+    if (!missing.length) return;
+    const added = missing.map((s) => ({ quoteId: s.quote.id, party: cleanParty(s.quote.client), updatedAt: s.quote.updatedAt }));
+    write(
+      KEYS.clients,
+      [...added, ...this.entries()].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, MAX_CLIENTS),
+    );
+  },
+  /** Drop every version of a client, whatever quote it came from. */
+  forget(name: string): void {
+    const key = normalizeName(name);
+    write(
+      KEYS.clients,
+      this.entries().filter((e) => normalizeName(e.party.name) !== key),
     );
   },
 };

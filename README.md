@@ -65,6 +65,7 @@ Browser (localStorage)                      Server (Next.js route handlers, stat
 - **Recupero chiave**: `/api/license/recover` cerca l'email tra i clienti Stripe con abbonamento attivo e invia una nuova chiave (risposta identica in ogni caso: niente enumerazione di email).
 - **Invia al cliente**: `/api/share` salva uno snapshot del preventivo pagato in Redis con un id pubblico e una chiave proprietario; `/p/<id>` mostra il preventivo, il PDF pulito e i pulsanti Accetta/Rifiuta; la decisione registra nome, nota, data e un hash giornaliero dell'IP e avvisa il mittente via email (Resend).
 - **Pagine SEO per professione** (`/preventivo/<slug>`): 20 modelli con contenuti unici e voci precompilate che si aprono nel builder con `/app?template=<slug>`; `/preventivo-ai` presenta la bozza con AI.
+- **Rubrica clienti** nel browser: i clienti dei preventivi precedenti vengono ricordati (anche dopo aver eliminato il preventivo); scrivendo la ragione sociale compaiono i suggerimenti e la scelta compila tutti i campi.
 - **Rate limiting** in memoria su tutte le API (PDF, checkout, AI, recupero, condivisione).
 
 ### Struttura

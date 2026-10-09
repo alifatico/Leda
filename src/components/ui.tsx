@@ -195,6 +195,8 @@ const paths: Record<string, string> = {
   settings: "M12 8a4 4 0 100 8 4 4 0 000-8zm8 4l-2-.5-.6-1.5 1-1.8-1.6-1.6-1.8 1-1.5-.6L13 4h-2l-.5 2-1.5.6-1.8-1L5.6 7.2l1 1.8L6 10.5 4 11v2l2 .5.6 1.5-1 1.8 1.6 1.6 1.8-1 1.5.6.5 2h2l.5-2 1.5-.6 1.8 1 1.6-1.6-1-1.8.6-1.5 2-.5v-2z",
   mail: "M4 6h16v12H4zM4 7l8 6 8-6",
   calc: "M6 3h12a1 1 0 011 1v16a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1zm2 3h8v3H8zm0 6h2m2 0h2m2 0h0M8 15h2m2 0h2m2 0h0",
+  edit: "M4 20h4L19 9a2.1 2.1 0 00-3-3L5 17l-1 3zm10-12l3 3",
+  users: "M16 19v-1a4 4 0 00-4-4H7a4 4 0 00-4 4v1m13-10a3 3 0 11-6 0 3 3 0 016 0zm5 10v-1a4 4 0 00-3-3.9M15 5.1a3 3 0 010 5.8",
 };
 
 export function Icon({ name, className }: { name: keyof typeof paths | string; className?: string }) {

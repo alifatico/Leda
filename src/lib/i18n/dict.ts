@@ -199,6 +199,12 @@ export const it = {
       details: "Dettagli documento",
     },
     senderHint: "Li ricordiamo per i prossimi preventivi.",
+    clientHint: "I clienti già usati si compilano da soli.",
+    clientBook: {
+      title: "Clienti già usati",
+      forget: "Dimentica questo cliente",
+    },
+    previewEdit: "Modifica modello e stile",
     f: {
       name: "Nome / Ragione sociale",
       vat: "Partita IVA",
@@ -660,6 +666,12 @@ export const en: Shape<typeof it> = {
       details: "Document details",
     },
     senderHint: "We remember them for your next quotes.",
+    clientHint: "Clients you already used fill in by themselves.",
+    clientBook: {
+      title: "Clients you already used",
+      forget: "Forget this client",
+    },
+    previewEdit: "Edit template and style",
     f: {
       name: "Name / Company",
       vat: "VAT number",

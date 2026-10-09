@@ -5,10 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { track } from "@/lib/analytics";
 import { api, ApiError, downloadBlob, formatPrice } from "@/lib/client-api";
+import { dedupeClients, type SavedClient } from "@/lib/clients";
 import type { PlanId, PublicConfig } from "@/lib/env";
 import { useLocale } from "@/lib/i18n/context";
-import { applyPreset, hasPreset, type LineItem, newId, nextQuoteNumber, type Quote } from "@/lib/quote";
+import { applyPreset, hasPreset, type LineItem, newId, nextQuoteNumber, type Quote, resolveDesign } from "@/lib/quote";
 import {
+  clientsStore,
   createQuoteFromProfile,
   createQuoteFromSaved,
   createQuoteFromTemplate,
@@ -81,6 +83,7 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
   const [shareOpen, setShareOpen] = useState(false);
   const [quotes, setQuotes] = useState<StoredQuote[]>([]);
   const [templates, setTemplates] = useState<SavedTemplate[]>([]);
+  const [clientEntries, setClientEntries] = useState<SavedClient[]>([]);
   const [open, setOpen] = useState<Record<SectionKey, boolean>>({ details: true, sender: true, client: true, items: true, options: false, notes: false, branding: false, design: false });
   const [mobileTab, setMobileTab] = useState<"edit" | "preview">("edit");
   const [busy, setBusy] = useState<"free" | "paid" | null>(null);
@@ -100,6 +103,8 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
       const all = quotesStore.all();
       setQuotes(all);
       setTemplates(templatesStore.all());
+      clientsStore.seedFromQuotes(all);
+      setClientEntries(clientsStore.entries());
       const wanted = searchParams.get("doc");
       const template = searchParams.get("template");
       const preset = !template && hasPreset(searchParams);
@@ -138,7 +143,9 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
     const id = setTimeout(() => {
       quotesStore.save({ quote, unlock, share });
       profileStore.updateFromQuote(quote);
+      clientsStore.remember(quote.id, quote.client, quote.updatedAt);
       setQuotes(quotesStore.all());
+      setClientEntries(clientsStore.entries());
     }, 350);
     return () => clearTimeout(id);
   }, [quote, unlock, share]);
@@ -213,6 +220,10 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
     if (!window.confirm(t("b.design.deleteTemplateConfirm"))) return;
     templatesStore.remove(id);
     setTemplates(templatesStore.all());
+  };
+  const forgetClient = (name: string) => {
+    clientsStore.forget(name);
+    setClientEntries(clientsStore.entries());
   };
 
   const applyDraft = (d: { subject: string; notes: string; paymentTerms: string; items: LineItem[] }, mode: "replace" | "append") => {
@@ -330,11 +341,15 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
   const paidLabel = license.status === "active" ? t("b.downloadPro") : unlock ? t("b.downloadUnlocked") : t("b.downloadPaid", { price: priceLabel });
 
   const toggle = (k: SectionKey) => setOpen((o) => ({ ...o, [k]: !o[k] }));
-  const goToDesign = () => {
+  const goToDesign = (source: "editor" | "preview") => {
+    track("design_open", { source });
     setOpen((o) => ({ ...o, design: true }));
     setMobileTab("edit");
     setTimeout(() => designRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
   };
+  const styleId = resolveDesign(quote).style;
+  // the address book never suggests the client of the quote being edited (it would echo what is being typed)
+  const clientBook = dedupeClients(clientEntries.filter((e) => e.quoteId !== quote.id));
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
@@ -391,7 +406,7 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
             <Button variant="secondary" onClick={createNew}>
               <Icon name="plus" className="h-4 w-4" /> {t("b.newQuote")}
             </Button>
-            <Button variant="secondary" onClick={goToDesign}>
+            <Button variant="secondary" onClick={() => goToDesign("editor")}>
               <Icon name="star" className="h-4 w-4" /> {t("b.sections.design")}
             </Button>
           </div>
@@ -402,8 +417,8 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
           <Section k="sender" open={open.sender} onToggle={toggle} title={t("b.sections.sender")} right={<span className="text-xs text-slate-400">{t("b.senderHint")}</span>}>
             <PartyForm party={quote.sender} onChange={(p) => update({ sender: p })} isSender />
           </Section>
-          <Section k="client" open={open.client} onToggle={toggle} title={t("b.sections.client")}>
-            <PartyForm party={quote.client} onChange={(p) => update({ client: p })} />
+          <Section k="client" open={open.client} onToggle={toggle} title={t("b.sections.client")} right={<span className="text-xs text-slate-400">{t("b.clientHint")}</span>}>
+            <PartyForm party={quote.client} onChange={(p) => update({ client: p })} book={clientBook} onForget={forgetClient} />
           </Section>
           <Section k="items" open={open.items} onToggle={toggle} title={t("b.sections.items")}>
             <ItemsEditor quote={quote} onChange={(items) => update({ items })} />
@@ -434,7 +449,16 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
         {/* preview */}
         <div className={cx("lg:sticky lg:top-20 lg:self-start", mobileTab === "edit" && "hidden lg:block")}>
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md">
-            <div className="max-h-[calc(100vh-11rem)] overflow-auto">
+            {/* preview toolbar: the way into the template editor from the document itself */}
+            <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-3 py-2">
+              <div className="min-w-0 truncate text-xs text-slate-500">
+                {t("b.preview")} · <span className="font-medium text-slate-700">{t(`b.design.styles.${styleId}`)}</span>
+              </div>
+              <Button variant="secondary" size="sm" onClick={() => goToDesign("preview")}>
+                <Icon name="edit" className="h-4 w-4" /> {t("b.previewEdit")}
+              </Button>
+            </div>
+            <div className="max-h-[calc(100vh-14rem)] overflow-auto">
               <QuotePreview quote={quote} watermark={!hasEntitlement} />
             </div>
           </div>
