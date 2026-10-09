@@ -37,6 +37,7 @@ const GRAY_600 = "#4B5563";
 const GRAY_400 = "#9CA3AF";
 const GRAY_200 = "#E5E7EB";
 const GRAY_50 = "#F9FAFB";
+const A4_HEIGHT = 841.89;
 
 const styles = StyleSheet.create({
   page: {
@@ -46,10 +47,8 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingBottom: 56,
     paddingHorizontal: 44,
+    lineHeight: 1.35,
   },
-  // lineHeight lives on a wrapper, not on the page: on the page it throws the
-  // fixed, bottom-anchored footer thousands of points off the sheet.
-  content: { lineHeight: 1.35 },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -177,7 +176,10 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: "absolute",
-    bottom: 26,
+    // Anchored from the top on purpose: with lineHeight set on the page,
+    // react-pdf places a fixed `bottom`-anchored block thousands of points
+    // above the sheet (footer and page numbers vanished). The page is always A4.
+    top: A4_HEIGHT - 38,
     left: 44,
     right: 44,
     flexDirection: "row",
@@ -301,258 +303,250 @@ export function QuoteDocument({ quote, watermark, siteUrl }: Props) {
           </Text>
         ) : null}
 
-        <View style={styles.content}>
-          {/* Header */}
-          <View style={styles.headerRow}>
-            <View style={{ maxWidth: 280 }}>
-              {quote.branding.logo ? (
-                // eslint-disable-next-line jsx-a11y/alt-text
-                <Image src={quote.branding.logo} style={styles.logo} />
-              ) : (
-                <Text style={[styles.senderName, { color }]}>
-                  {s(quote.sender.name) || L.quote}
+        {/* Header */}
+        <View style={styles.headerRow}>
+          <View style={{ maxWidth: 280 }}>
+            {quote.branding.logo ? (
+              // eslint-disable-next-line jsx-a11y/alt-text
+              <Image src={quote.branding.logo} style={styles.logo} />
+            ) : (
+              <Text style={[styles.senderName, { color }]}>
+                {s(quote.sender.name) || L.quote}
+              </Text>
+            )}
+          </View>
+          <View>
+            <Text style={[styles.docTitle, { color }]}>{L.quote}</Text>
+            <View style={styles.metaTable}>
+              <View style={styles.metaRow}>
+                <Text style={styles.metaLabel}>{L.number}</Text>
+                <Text style={styles.metaValue}>{s(quote.number)}</Text>
+              </View>
+              <View style={styles.metaRow}>
+                <Text style={styles.metaLabel}>{L.date}</Text>
+                <Text style={styles.metaValue}>
+                  {formatDate(quote.date, lang)}
                 </Text>
-              )}
-            </View>
-            <View>
-              <Text style={[styles.docTitle, { color }]}>{L.quote}</Text>
-              <View style={styles.metaTable}>
-                <View style={styles.metaRow}>
-                  <Text style={styles.metaLabel}>{L.number}</Text>
-                  <Text style={styles.metaValue}>{s(quote.number)}</Text>
-                </View>
-                <View style={styles.metaRow}>
-                  <Text style={styles.metaLabel}>{L.date}</Text>
-                  <Text style={styles.metaValue}>
-                    {formatDate(quote.date, lang)}
-                  </Text>
-                </View>
-                <View style={styles.metaRow}>
-                  <Text style={styles.metaLabel}>{L.validUntil}</Text>
-                  <Text style={styles.metaValue}>
-                    {formatDate(validUntil(quote), lang)}
-                  </Text>
-                </View>
+              </View>
+              <View style={styles.metaRow}>
+                <Text style={styles.metaLabel}>{L.validUntil}</Text>
+                <Text style={styles.metaValue}>
+                  {formatDate(validUntil(quote), lang)}
+                </Text>
               </View>
             </View>
           </View>
+        </View>
 
-          {/* Parties */}
-          <View style={styles.partiesRow}>
-            <PartyBlock
-              party={quote.sender}
-              label={L.from}
-              boxStyle={styles.partyBox}
-              lang={lang}
-            />
-            <PartyBlock
-              party={quote.client}
-              label={L.to}
-              boxStyle={styles.partyBoxClient}
-              lang={lang}
-            />
+        {/* Parties */}
+        <View style={styles.partiesRow}>
+          <PartyBlock
+            party={quote.sender}
+            label={L.from}
+            boxStyle={styles.partyBox}
+            lang={lang}
+          />
+          <PartyBlock
+            party={quote.client}
+            label={L.to}
+            boxStyle={styles.partyBoxClient}
+            lang={lang}
+          />
+        </View>
+
+        {title ? (
+          <View style={styles.subject}>
+            <Text style={styles.subjectLabel}>{L.subject}:</Text>
+            <Text style={styles.subjectValue}>{title}</Text>
           </View>
+        ) : null}
 
-          {title ? (
-            <View style={styles.subject}>
-              <Text style={styles.subjectLabel}>{L.subject}:</Text>
-              <Text style={styles.subjectValue}>{title}</Text>
-            </View>
-          ) : null}
-
-          {/* Items */}
-          <View style={styles.table}>
-            <View style={[styles.th, { backgroundColor: color }]} fixed>
-              <Text style={styles.cellDesc}>{L.description}</Text>
-              <Text style={styles.cellQty}>{L.qty}</Text>
-              <Text style={styles.cellPrice}>{L.unitPrice}</Text>
-              {showDiscountCol ? (
-                <Text style={styles.cellDisc}>{L.discount}</Text>
-              ) : null}
-              <Text style={styles.cellVat}>{L.vatRate}</Text>
-              <Text style={styles.cellAmount}>{L.amount}</Text>
-            </View>
-            {quote.items.map((it, idx) => {
-              const lt = t.lines[idx];
-              const qty = `${formatNumber(it.quantity, lang, 3)}${it.unit ? ` ${s(it.unit)}` : ""}`;
-              return (
-                <View
-                  key={it.id}
-                  style={idx % 2 === 1 ? [styles.tr, styles.trAlt] : styles.tr}
-                  wrap={false}
-                >
-                  <View style={styles.cellDesc}>
-                    <Text style={styles.descTitle}>
-                      {s(it.description) || "—"}
-                    </Text>
-                    {it.details ? (
-                      <Text style={styles.descDetails}>{s(it.details)}</Text>
-                    ) : null}
-                  </View>
-                  <Text style={styles.cellQty}>{qty}</Text>
-                  <Text style={styles.cellPrice}>{money(it.unitPrice)}</Text>
-                  {showDiscountCol ? (
-                    <Text style={styles.cellDisc}>
-                      {it.discountPct ? formatPct(it.discountPct, lang) : "—"}
-                    </Text>
+        {/* Items */}
+        <View style={styles.table}>
+          <View style={[styles.th, { backgroundColor: color }]} fixed>
+            <Text style={styles.cellDesc}>{L.description}</Text>
+            <Text style={styles.cellQty}>{L.qty}</Text>
+            <Text style={styles.cellPrice}>{L.unitPrice}</Text>
+            {showDiscountCol ? (
+              <Text style={styles.cellDisc}>{L.discount}</Text>
+            ) : null}
+            <Text style={styles.cellVat}>{L.vatRate}</Text>
+            <Text style={styles.cellAmount}>{L.amount}</Text>
+          </View>
+          {quote.items.map((it, idx) => {
+            const lt = t.lines[idx];
+            const qty = `${formatNumber(it.quantity, lang, 3)}${it.unit ? ` ${s(it.unit)}` : ""}`;
+            return (
+              <View
+                key={it.id}
+                style={idx % 2 === 1 ? [styles.tr, styles.trAlt] : styles.tr}
+                wrap={false}
+              >
+                <View style={styles.cellDesc}>
+                  <Text style={styles.descTitle}>
+                    {s(it.description) || "—"}
+                  </Text>
+                  {it.details ? (
+                    <Text style={styles.descDetails}>{s(it.details)}</Text>
                   ) : null}
-                  <Text style={styles.cellVat}>
-                    {formatNumber(lt.vatRate, lang)}%
+                </View>
+                <Text style={styles.cellQty}>{qty}</Text>
+                <Text style={styles.cellPrice}>{money(it.unitPrice)}</Text>
+                {showDiscountCol ? (
+                  <Text style={styles.cellDisc}>
+                    {it.discountPct ? formatPct(it.discountPct, lang) : "—"}
                   </Text>
-                  <Text style={styles.cellAmount}>{money(lt.net)}</Text>
-                </View>
-              );
-            })}
-          </View>
-
-          {/* Totals */}
-          <View style={styles.totalsRow} wrap={false}>
-            <View style={styles.totals}>
-              {t.lineDiscounts > 0 || t.globalDiscount > 0 ? (
-                <View style={styles.totalLine}>
-                  <Text style={styles.totalLabel}>{L.subtotal}</Text>
-                  <Text style={styles.totalValue}>{money(t.subtotal)}</Text>
-                </View>
-              ) : null}
-              {t.lineDiscounts > 0 ? (
-                <View style={styles.totalLine}>
-                  <Text style={styles.totalLabel}>{L.lineDiscounts}</Text>
-                  <Text style={styles.totalValue}>
-                    -{money(t.lineDiscounts)}
-                  </Text>
-                </View>
-              ) : null}
-              {t.globalDiscount > 0 ? (
-                <View style={styles.totalLine}>
-                  <Text style={styles.totalLabel}>
-                    {L.globalDiscount}{" "}
-                    {formatPct(quote.options.globalDiscountPct, lang)}
-                  </Text>
-                  <Text style={styles.totalValue}>
-                    -{money(t.globalDiscount)}
-                  </Text>
-                </View>
-              ) : null}
-              <View style={styles.totalLine}>
-                <Text style={styles.totalLabel}>{L.net}</Text>
-                <Text style={styles.totalValue}>{money(t.net)}</Text>
-              </View>
-              {t.rivalsa > 0 ? (
-                <>
-                  <View style={styles.totalLine}>
-                    <Text style={styles.totalLabel}>
-                      {s(rivalsaCaption(quote.options, lang))}
-                    </Text>
-                    <Text style={styles.totalValue}>{money(t.rivalsa)}</Text>
-                  </View>
-                  <View style={styles.totalLine}>
-                    <Text style={styles.totalLabel}>{L.taxable}</Text>
-                    <Text style={styles.totalValue}>{money(t.taxable)}</Text>
-                  </View>
-                </>
-              ) : null}
-              {t.vatGroups.map((g) => (
-                <View style={styles.totalLine} key={g.rate}>
-                  <Text style={styles.totalLabel}>
-                    {L.vatOn} {formatNumber(g.rate, lang)}%
-                    {t.vatGroups.length > 1 ? ` (${money(g.base)})` : ""}
-                  </Text>
-                  <Text style={styles.totalValue}>{money(g.vat)}</Text>
-                </View>
-              ))}
-              {t.bollo > 0 ? (
-                <View style={styles.totalLine}>
-                  <Text style={styles.totalLabel}>{L.bollo}</Text>
-                  <Text style={styles.totalValue}>{money(t.bollo)}</Text>
-                </View>
-              ) : null}
-              <View style={styles.totalStrong}>
-                <Text style={styles.totalStrongText}>{L.total}</Text>
-                <Text style={styles.totalStrongText}>{money(t.total)}</Text>
-              </View>
-              {t.ritenuta > 0 ? (
-                <>
-                  <View style={styles.totalLine}>
-                    <Text style={styles.totalLabel}>
-                      {L.ritenuta}{" "}
-                      {formatPct(quote.options.ritenutaAccontoPct, lang)}
-                    </Text>
-                    <Text style={styles.totalValue}>-{money(t.ritenuta)}</Text>
-                  </View>
-                  <View style={[styles.payable, { backgroundColor: color }]}>
-                    <Text style={styles.payableText}>{L.netPayable}</Text>
-                    <Text style={styles.payableText}>
-                      {money(t.netPayable)}
-                    </Text>
-                  </View>
-                </>
-              ) : null}
-              {t.deposit > 0 ? (
-                <View style={styles.totalLine}>
-                  <Text style={styles.totalLabel}>
-                    {L.deposit} ({formatPct(quote.options.depositPct, lang)})
-                  </Text>
-                  <Text style={styles.totalValue}>{money(t.deposit)}</Text>
-                </View>
-              ) : null}
-            </View>
-          </View>
-
-          {/* Notes & terms */}
-          {quote.notes || quote.paymentTerms ? (
-            <View style={styles.sections}>
-              {quote.notes ? (
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>{L.notes}</Text>
-                  <Text style={styles.sectionBody}>{s(quote.notes)}</Text>
-                </View>
-              ) : null}
-              {quote.paymentTerms ? (
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>{L.paymentTerms}</Text>
-                  <Text style={styles.sectionBody}>
-                    {s(quote.paymentTerms)}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-          ) : null}
-
-          {/* Legal wording */}
-          {quote.options.regimeForfettario ||
-          occasionale ||
-          hasExempt ||
-          t.bollo > 0 ? (
-            <View style={styles.legal}>
-              {quote.options.regimeForfettario ? (
-                <Text>{L.forfettarioNote}</Text>
-              ) : null}
-              {occasionale ? (
-                <Text>
-                  {L.occasionaleNote}
-                  {t.ritenuta > 0 ? ` ${L.occasionaleRitenutaNote}` : ""}
+                ) : null}
+                <Text style={styles.cellVat}>
+                  {formatNumber(lt.vatRate, lang)}%
                 </Text>
-              ) : null}
-              {hasExempt && !quote.options.regimeForfettario && !occasionale ? (
-                <Text>{s(quote.options.vatExemptNote) || L.exemptNote}</Text>
-              ) : null}
-              {t.bollo > 0 ? <Text>{L.bolloNote}</Text> : null}
-            </View>
-          ) : null}
+                <Text style={styles.cellAmount}>{money(lt.net)}</Text>
+              </View>
+            );
+          })}
+        </View>
 
-          {/* Acceptance */}
-          <View style={styles.acceptance} wrap={false}>
-            <View style={{ color: GRAY_600, fontSize: 8, width: 230 }}>
+        {/* Totals */}
+        <View style={styles.totalsRow} wrap={false}>
+          <View style={styles.totals}>
+            {t.lineDiscounts > 0 || t.globalDiscount > 0 ? (
+              <View style={styles.totalLine}>
+                <Text style={styles.totalLabel}>{L.subtotal}</Text>
+                <Text style={styles.totalValue}>{money(t.subtotal)}</Text>
+              </View>
+            ) : null}
+            {t.lineDiscounts > 0 ? (
+              <View style={styles.totalLine}>
+                <Text style={styles.totalLabel}>{L.lineDiscounts}</Text>
+                <Text style={styles.totalValue}>-{money(t.lineDiscounts)}</Text>
+              </View>
+            ) : null}
+            {t.globalDiscount > 0 ? (
+              <View style={styles.totalLine}>
+                <Text style={styles.totalLabel}>
+                  {L.globalDiscount}{" "}
+                  {formatPct(quote.options.globalDiscountPct, lang)}
+                </Text>
+                <Text style={styles.totalValue}>
+                  -{money(t.globalDiscount)}
+                </Text>
+              </View>
+            ) : null}
+            <View style={styles.totalLine}>
+              <Text style={styles.totalLabel}>{L.net}</Text>
+              <Text style={styles.totalValue}>{money(t.net)}</Text>
+            </View>
+            {t.rivalsa > 0 ? (
+              <>
+                <View style={styles.totalLine}>
+                  <Text style={styles.totalLabel}>
+                    {s(rivalsaCaption(quote.options, lang))}
+                  </Text>
+                  <Text style={styles.totalValue}>{money(t.rivalsa)}</Text>
+                </View>
+                <View style={styles.totalLine}>
+                  <Text style={styles.totalLabel}>{L.taxable}</Text>
+                  <Text style={styles.totalValue}>{money(t.taxable)}</Text>
+                </View>
+              </>
+            ) : null}
+            {t.vatGroups.map((g) => (
+              <View style={styles.totalLine} key={g.rate}>
+                <Text style={styles.totalLabel}>
+                  {L.vatOn} {formatNumber(g.rate, lang)}%
+                  {t.vatGroups.length > 1 ? ` (${money(g.base)})` : ""}
+                </Text>
+                <Text style={styles.totalValue}>{money(g.vat)}</Text>
+              </View>
+            ))}
+            {t.bollo > 0 ? (
+              <View style={styles.totalLine}>
+                <Text style={styles.totalLabel}>{L.bollo}</Text>
+                <Text style={styles.totalValue}>{money(t.bollo)}</Text>
+              </View>
+            ) : null}
+            <View style={styles.totalStrong}>
+              <Text style={styles.totalStrongText}>{L.total}</Text>
+              <Text style={styles.totalStrongText}>{money(t.total)}</Text>
+            </View>
+            {t.ritenuta > 0 ? (
+              <>
+                <View style={styles.totalLine}>
+                  <Text style={styles.totalLabel}>
+                    {L.ritenuta}{" "}
+                    {formatPct(quote.options.ritenutaAccontoPct, lang)}
+                  </Text>
+                  <Text style={styles.totalValue}>-{money(t.ritenuta)}</Text>
+                </View>
+                <View style={[styles.payable, { backgroundColor: color }]}>
+                  <Text style={styles.payableText}>{L.netPayable}</Text>
+                  <Text style={styles.payableText}>{money(t.netPayable)}</Text>
+                </View>
+              </>
+            ) : null}
+            {t.deposit > 0 ? (
+              <View style={styles.totalLine}>
+                <Text style={styles.totalLabel}>
+                  {L.deposit} ({formatPct(quote.options.depositPct, lang)})
+                </Text>
+                <Text style={styles.totalValue}>{money(t.deposit)}</Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+
+        {/* Notes & terms */}
+        {quote.notes || quote.paymentTerms ? (
+          <View style={styles.sections}>
+            {quote.notes ? (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>{L.notes}</Text>
+                <Text style={styles.sectionBody}>{s(quote.notes)}</Text>
+              </View>
+            ) : null}
+            {quote.paymentTerms ? (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>{L.paymentTerms}</Text>
+                <Text style={styles.sectionBody}>{s(quote.paymentTerms)}</Text>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+
+        {/* Legal wording */}
+        {quote.options.regimeForfettario ||
+        occasionale ||
+        hasExempt ||
+        t.bollo > 0 ? (
+          <View style={styles.legal}>
+            {quote.options.regimeForfettario ? (
+              <Text>{L.forfettarioNote}</Text>
+            ) : null}
+            {occasionale ? (
               <Text>
-                {L.validUntil} {formatDate(validUntil(quote), lang)}
+                {L.occasionaleNote}
+                {t.ritenuta > 0 ? ` ${L.occasionaleRitenutaNote}` : ""}
               </Text>
-            </View>
-            <View style={styles.acceptanceBox}>
-              <Text style={{ fontFamily: FONT_BOLD, color: GRAY_900 }}>
-                {L.acceptance}
-              </Text>
-              <Text>{L.signature}</Text>
-            </View>
+            ) : null}
+            {hasExempt && !quote.options.regimeForfettario && !occasionale ? (
+              <Text>{s(quote.options.vatExemptNote) || L.exemptNote}</Text>
+            ) : null}
+            {t.bollo > 0 ? <Text>{L.bolloNote}</Text> : null}
+          </View>
+        ) : null}
+
+        {/* Acceptance */}
+        <View style={styles.acceptance} wrap={false}>
+          <View style={{ color: GRAY_600, fontSize: 8, width: 230 }}>
+            <Text>
+              {L.validUntil} {formatDate(validUntil(quote), lang)}
+            </Text>
+          </View>
+          <View style={styles.acceptanceBox}>
+            <Text style={{ fontFamily: FONT_BOLD, color: GRAY_900 }}>
+              {L.acceptance}
+            </Text>
+            <Text>{L.signature}</Text>
           </View>
         </View>
 
