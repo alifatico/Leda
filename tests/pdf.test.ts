@@ -36,6 +36,19 @@ describe("PDF rendering", () => {
     expect(pdfFilename(q)).toBe("Quote-PRV-2026-014.pdf");
   }, 30000);
 
+  it("prints a clickable site link in the footer of free PDFs, laid out inside the page", async () => {
+    const q = sampleQuote("it");
+    const pdf = await renderQuotePdf(q, { watermark: true, siteUrl: "https://example.com" });
+    dump("footer-link.pdf", pdf);
+    const text = Buffer.from(pdf).toString("latin1");
+    expect(text).toContain("/URI (https://example.com/?utm_source=pdf&utm_medium=footer)");
+    const rect = text.match(/\/Rect \[([\d.]+) ([\d.]+) ([\d.]+) ([\d.]+)\]/);
+    expect(rect).not.toBeNull();
+    const [, , y1, , y2] = rect!;
+    expect(Number(y2) - Number(y1)).toBeLessThan(40);
+    expect(Number(y2)).toBeLessThan(842);
+  }, 30000);
+
   it("sanitizes unsupported characters", () => {
     expect(sanitizeForPdf("Caffè € – ok 🚀 → fine")).toBe("Caffè € – ok  -> fine");
     expect(sanitizeForPdf(undefined)).toBe("");
