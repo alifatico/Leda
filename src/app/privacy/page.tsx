@@ -24,9 +24,9 @@ export default function PrivacyPage() {
           inviati i dati del cliente né quelli del mittente.
         </li>
         <li>
-          <strong>Ricerca nel Registro Imprese</strong>: se attiva, la ragione sociale o la partita IVA digitata nel campo cliente viene inviata a Openapi S.p.A. (Roma), che
-          interroga i dati pubblici del Registro Imprese per proporre i dati anagrafici dell&apos;impresa; non viene inviato nessun altro contenuto del preventivo e le ricerche non
-          vengono conservate oltre il tempo necessario a rispondere.
+          <strong>Ricerca nel Registro Imprese</strong>: se attiva, la ragione sociale o la partita IVA digitata nel campo cliente viene inviata al fornitore configurato, Openapi
+          S.p.A. (Roma) oppure Apify Technologies s.r.o. (Praga, UE), che raccoglie i dati pubblici del Registro Imprese per proporre i dati anagrafici dell&apos;impresa; non viene
+          inviato nessun altro contenuto del preventivo e le ricerche non vengono conservate oltre il tempo necessario a rispondere.
         </li>
         <li>
           <strong>Pagamenti</strong>: sono gestiti da Stripe Payments Europe Ltd. Noi non riceviamo né conserviamo i dati della carta; riceviamo da Stripe l&apos;esito del pagamento, l&apos;email
@@ -60,7 +60,7 @@ export default function PrivacyPage() {
       <h2>4. Destinatari e trasferimenti</h2>
       <p>
         Fornitori di servizi che agiscono come responsabili del trattamento: Vercel (hosting), Stripe (pagamenti), Anthropic (bozza con AI), Resend (email), Upstash (archiviazione dei
-        preventivi inviati con link), Openapi (ricerca nel Registro Imprese). Alcuni fornitori possono
+        preventivi inviati con link), Openapi o Apify (ricerca nel Registro Imprese, a seconda della configurazione). Alcuni fornitori possono
         trattare dati al di fuori dell&apos;UE sulla base delle Clausole Contrattuali Standard o del Data Privacy Framework.
       </p>
       <h2>5. Cookie e archiviazione locale</h2>

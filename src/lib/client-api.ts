@@ -1,5 +1,5 @@
 /* Browser-side helpers for the API routes. */
-import type { CompanyHit } from "./company";
+import type { RunOutcome, SearchOutcome } from "./company";
 import type { PublicConfig, PlanId } from "./env";
 import type { LineItem, Party, Quote } from "./quote";
 import type { ShareOwnerView, SharePublic } from "./share";
@@ -54,7 +54,10 @@ export const api = {
 
   /** Business-register lookup (hidden when the server has no provider token). */
   company: {
-    search: (q: string, signal?: AbortSignal) => call<{ hits: CompanyHit[] }>(`/api/company/search?q=${encodeURIComponent(q)}`, { signal }),
+    /** Either the hits, or the id of a run in progress to follow with `run()` */
+    search: (q: string, signal?: AbortSignal) => call<SearchOutcome>(`/api/company/search?q=${encodeURIComponent(q)}`, { signal }),
+    run: (runId: string, q: string, signal?: AbortSignal) =>
+      call<RunOutcome>(`/api/company/run/${encodeURIComponent(runId)}?q=${encodeURIComponent(q)}`, { signal }),
     get: (id: string, signal?: AbortSignal) => call<{ party: Party }>(`/api/company/${encodeURIComponent(id)}`, { signal }),
   },
 

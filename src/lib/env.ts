@@ -66,18 +66,50 @@ export const aiEnv = {
   enabled: () => Boolean(first(process.env.ANTHROPIC_API_KEY)) && process.env.AI_DRAFT_DISABLED !== "1",
 };
 
+export type CompanyProvider = "openapi" | "apify" | "mock";
+/** autocomplete: results while typing (real-time API); on-demand: a "search" button, results after a run of some seconds */
+export type CompanyLookupMode = "off" | "autocomplete" | "on-demand";
+
 /**
- * Client lookup in the Italian business register through openapi.com
- * (company.openapi.com). Hidden without a token; COMPANY_LOOKUP=mock serves
- * canned companies for local development.
+ * Client lookup in the Italian business register. Two providers: openapi.com
+ * (company.openapi.com, real-time API, prepaid wallet) and an Apify actor that
+ * scrapes the register (runs of tens of seconds, pay per result). Hidden without
+ * a token; COMPANY_LOOKUP=mock serves canned companies for local development.
  */
 export const companyEnv = {
-  token: () => first(process.env.OPENAPI_COMPANY_TOKEN),
-  sandbox: () => process.env.OPENAPI_COMPANY_SANDBOX === "1" || process.env.OPENAPI_COMPANY_SANDBOX === "true",
-  mock: () => process.env.COMPANY_LOOKUP === "mock",
-  enabled: () => process.env.COMPANY_LOOKUP !== "off" && (process.env.COMPANY_LOOKUP === "mock" || Boolean(first(process.env.OPENAPI_COMPANY_TOKEN))),
+  provider(): CompanyProvider | null {
+    const chosen = process.env.COMPANY_LOOKUP;
+    if (chosen === "off") return null;
+    if (chosen === "mock") return "mock";
+    if (chosen === "apify") return first(process.env.APIFY_TOKEN) ? "apify" : null;
+    if (chosen === "openapi") return first(process.env.OPENAPI_COMPANY_TOKEN) ? "openapi" : null;
+    if (first(process.env.OPENAPI_COMPANY_TOKEN)) return "openapi";
+    if (first(process.env.APIFY_TOKEN)) return "apify";
+    return null;
+  },
+  mode(): CompanyLookupMode {
+    const p = companyEnv.provider();
+    if (!p) return "off";
+    const forced = process.env.COMPANY_LOOKUP_MODE;
+    if (forced === "autocomplete" || forced === "on-demand") return forced;
+    return p === "apify" ? "on-demand" : "autocomplete";
+  },
+  enabled: () => companyEnv.mode() !== "off",
+  openapi: {
+    token: () => first(process.env.OPENAPI_COMPANY_TOKEN),
+    sandbox: () => process.env.OPENAPI_COMPANY_SANDBOX === "1" || process.env.OPENAPI_COMPANY_SANDBOX === "true",
+  },
+  apify: {
+    token: () => first(process.env.APIFY_TOKEN),
+    /** "username~actor-name" as the Apify API wants it */
+    actor: () => first(process.env.APIFY_COMPANY_ACTOR) ?? "jungle_synthesizer~italy-registroimprese-bilanci-scraper",
+    /** Results per search; each one is paid */
+    maxItems: () => Math.min(intEnv("APIFY_COMPANY_MAX_ITEMS", 5), 20),
+    /** Run timeout in seconds */
+    timeoutSecs: () => Math.min(intEnv("APIFY_COMPANY_TIMEOUT", 120), 300),
+  },
   /** Hard cap of paid upstream calls per day across all users (cost control) */
-  dailyLimit: () => intEnv("COMPANY_LOOKUP_DAILY_LIMIT", 2000),
+  dailyLimit: () => intEnv("COMPANY_LOOKUP_DAILY_LIMIT", companyEnv.provider() === "apify" ? 300 : 2000),
 };
 
 export const emailEnv = {
@@ -124,8 +156,8 @@ export type PublicConfig = {
   ai: boolean;
   /** "send to client" link + online acceptance (needs a KV store, see src/lib/store.ts) */
   sharing: boolean;
-  /** client search in the business register (needs OPENAPI_COMPANY_TOKEN, see src/lib/company.ts) */
-  companyLookup: boolean;
+  /** client search in the business register (needs a provider token, see src/lib/company.ts) */
+  companyLookup: CompanyLookupMode;
   pricing: Pricing;
   supportEmail: string;
   recovery: boolean;
@@ -142,7 +174,7 @@ export function publicConfig(): PublicConfig {
     payments: paymentsEnabled(),
     ai: aiEnv.enabled(),
     sharing: sharingConfigured(),
-    companyLookup: companyEnv.enabled(),
+    companyLookup: companyEnv.mode(),
     pricing: getPricing(),
     supportEmail: businessEnv.supportEmail(),
     recovery: Boolean(emailEnv.resendApiKey()),

@@ -4,7 +4,10 @@ import { jsonError } from "@/lib/http";
 import { clientIp, rateLimit } from "@/lib/ratelimit";
 import { lookupErrorResponse } from "../errors";
 
-/** Companies matching a name (or a VAT number): GET /api/company/search?q=… */
+/**
+ * Companies matching a name (or a VAT number): GET /api/company/search?q=…
+ * Answers `{ hits }`, or `{ runId }` when the provider works in runs (poll /api/company/run/:id).
+ */
 export async function GET(req: Request) {
   if (!lookupEnabled()) return jsonError("Company lookup is not enabled", 503, { code: "lookup_disabled" });
   const q = normalizeQuery(new URL(req.url).searchParams.get("q") ?? "");
@@ -13,5 +16,5 @@ export async function GET(req: Request) {
   if (!perIp.ok) return jsonError("Too many requests", 429, { code: "rate_limited", retryAfter: perIp.retryAfterSec });
   const r = await searchCompanies(q);
   if (!r.ok) return lookupErrorResponse("company/search", r.reason, r.message);
-  return NextResponse.json({ hits: r.data }, { headers: { "Cache-Control": "private, max-age=300" } });
+  return NextResponse.json(r.data, { headers: { "Cache-Control": "hits" in r.data ? "private, max-age=300" : "no-store" } });
 }

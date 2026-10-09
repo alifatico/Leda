@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { api } from "@/lib/client-api";
 import { clientSummary, findClient, hasDetails, searchClients } from "@/lib/clients";
 import type { CompanyHit } from "@/lib/company";
+import type { CompanyLookupMode } from "@/lib/env";
 import { useLocale } from "@/lib/i18n/context";
 import type { Party } from "@/lib/quote";
-import { Field, Icon, Input, Spinner, cx } from "../ui";
+import { Button, Field, Icon, Input, Spinner, cx } from "../ui";
 
 export function PartyForm({
   party,
@@ -22,15 +23,15 @@ export function PartyForm({
   /** Address book: when given, the name field suggests known clients and fills the whole card. */
   book?: Party[];
   onForget?: (name: string) => void;
-  /** Also search the Italian business register while typing (server has a provider token). */
-  lookup?: boolean;
+  /** Business-register search: while typing ("autocomplete") or behind a button ("on-demand"). */
+  lookup?: CompanyLookupMode;
 }) {
   const { t } = useLocale();
   const set = (k: keyof Party) => (e: React.ChangeEvent<HTMLInputElement>) => onChange({ ...party, [k]: e.target.value });
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-6">
       {book ? (
-        <ClientNameField party={party} onChange={onChange} book={book} onForget={onForget} lookup={lookup} />
+        <ClientNameField party={party} onChange={onChange} book={book} onForget={onForget} lookup={lookup ?? "off"} />
       ) : (
         <Field label={t("b.f.name")} className="sm:col-span-6">
           <Input value={party.name} onChange={set("name")} autoComplete="organization" />
@@ -83,12 +84,42 @@ type Option = { kind: "local"; party: Party } | { kind: "remote"; hit: CompanyHi
 
 const MIN_LOOKUP_CHARS = 3;
 const LOOKUP_DELAY_MS = 450;
+const POLL_EVERY_MS = 1500;
+const POLL_MAX_MS = 180_000;
 
 const hitSummary = (h: CompanyHit) => [h.city && h.province ? `${h.city} (${h.province})` : h.city, h.vat ?? h.taxCode].filter(Boolean).join(" · ");
 
+function sleep(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(resolve, ms);
+    signal.addEventListener(
+      "abort",
+      () => {
+        clearTimeout(t);
+        reject(new DOMException("Aborted", "AbortError"));
+      },
+      { once: true },
+    );
+  });
+}
+
+/** Search the register; when the provider answers with a run, follow it until the records are in. */
+async function fetchHits(q: string, signal: AbortSignal): Promise<CompanyHit[]> {
+  const first = await api.company.search(q, signal);
+  if ("hits" in first) return first.hits;
+  const started = Date.now();
+  while (Date.now() - started < POLL_MAX_MS) {
+    await sleep(POLL_EVERY_MS, signal);
+    const r = await api.company.run(first.runId, q, signal);
+    if ("hits" in r) return r.hits;
+  }
+  throw new Error("timeout");
+}
+
 /**
  * Name field with a dropdown of the clients used in earlier quotes and, when the
- * server can reach it, of the companies in the business register. Picking one
+ * server can reach it, of the companies in the business register (while typing,
+ * or behind a button when every search is a run of some seconds). Picking one
  * (click, tap or Enter) fills every field of the card; typing the exact name of a
  * known client and leaving the field does the same, as long as the card is empty.
  */
@@ -103,10 +134,13 @@ function ClientNameField({
   onChange: (p: Party) => void;
   book: Party[];
   onForget?: (name: string) => void;
-  lookup?: boolean;
+  lookup: CompanyLookupMode;
 }) {
   const { t } = useLocale();
   const listId = useId();
+  const live = lookup === "autocomplete";
+  const onDemand = lookup === "on-demand";
+  const inputRef = useRef<HTMLInputElement>(null);
   const [focused, setFocused] = useState(false);
   // closed with Escape or right after a pick, until the text changes again
   const [dismissed, setDismissed] = useState(false);
@@ -114,6 +148,7 @@ function ClientNameField({
   const [typed, setTyped] = useState(false);
   const [active, setActive] = useState(0);
   const [remote, setRemote] = useState<Remote>({ q: "", status: "done", hits: [] });
+  const searchRef = useRef<AbortController | null>(null);
   // id of the register row whose full card is being fetched
   const [pending, setPending] = useState<string | null>(null);
   const pendingRef = useRef<AbortController | null>(null);
@@ -122,36 +157,52 @@ function ClientNameField({
   const showList = focused && !dismissed;
   const local = showList ? searchClients(book, party.name) : [];
 
-  // business register: search a moment after the user stops typing, cancel when the text changes
-  const wantRemote = Boolean(lookup) && showList && typed && q.length >= MIN_LOOKUP_CHARS;
+  const runSearch = useCallback((query: string, keepPrefixHits: boolean) => {
+    searchRef.current?.abort();
+    const ctrl = new AbortController();
+    searchRef.current = ctrl;
+    // while typing, keep the rows found for a shorter prefix on screen until the narrower search answers
+    setRemote((r) => ({ q: query, status: "loading", hits: keepPrefixHits && r.q && query.toLowerCase().startsWith(r.q.toLowerCase()) ? r.hits : [] }));
+    fetchHits(query, ctrl.signal).then(
+      (hits) => {
+        if (!ctrl.signal.aborted) setRemote({ q: query, status: "done", hits });
+      },
+      () => {
+        if (!ctrl.signal.aborted) setRemote({ q: query, status: "error", hits: [] });
+      },
+    );
+    return ctrl;
+  }, []);
+
+  // autocomplete: search a moment after the user stops typing, cancel when the text changes
+  const wantRemote = live && showList && typed && q.length >= MIN_LOOKUP_CHARS;
   useEffect(() => {
     if (!wantRemote) return;
-    const ctrl = new AbortController();
+    const started: { ctrl: AbortController | null } = { ctrl: null };
     const timer = setTimeout(() => {
-      // keep the rows found for a shorter prefix on screen while the narrower search runs
-      setRemote((r) => ({ q, status: "loading", hits: r.q && q.toLowerCase().startsWith(r.q.toLowerCase()) ? r.hits : [] }));
-      api.company.search(q, ctrl.signal).then(
-        (res) => {
-          if (!ctrl.signal.aborted) setRemote({ q, status: "done", hits: res.hits });
-        },
-        () => {
-          if (!ctrl.signal.aborted) setRemote({ q, status: "error", hits: [] });
-        },
-      );
+      started.ctrl = runSearch(q, true);
     }, LOOKUP_DELAY_MS);
     return () => {
       clearTimeout(timer);
-      ctrl.abort();
+      started.ctrl?.abort();
     };
-  }, [wantRemote, q]);
-  useEffect(() => () => pendingRef.current?.abort(), []);
+  }, [wantRemote, q, runSearch]);
+  useEffect(
+    () => () => {
+      searchRef.current?.abort();
+      pendingRef.current?.abort();
+    },
+    [],
+  );
 
-  const remoteHits: CompanyHit[] = lookup && showList && remote.q && q.toLowerCase().startsWith(remote.q.toLowerCase()) ? remote.hits : [];
-  const remoteState = lookup && showList && remote.q === q ? remote.status : null;
-  const searching = wantRemote && (remote.q !== q || remote.status === "loading");
-  const noResults = wantRemote && !searching && remoteState === "done" && remoteHits.length === 0;
+  const inFlight = remote.status === "loading" && remote.q === q;
+  const searching = inFlight || (wantRemote && remote.q !== q);
+  const remoteHits: CompanyHit[] = lookup !== "off" && showList && remote.q && q.toLowerCase().startsWith(remote.q.toLowerCase()) ? remote.hits : [];
+  const remoteState = lookup !== "off" && remote.q === q ? remote.status : null;
+  const noResults = !searching && remoteState === "done" && remoteHits.length === 0 && (onDemand || wantRemote);
   const options: Option[] = [...local.map((p) => ({ kind: "local" as const, party: p })), ...remoteHits.map((hit) => ({ kind: "remote" as const, hit }))];
-  const registryBlock = remoteHits.length > 0 || searching || remoteState === "error" || noResults;
+  // on-demand mode reports errors and empty answers under the button, where they stay visible without focus
+  const registryBlock = remoteHits.length > 0 || searching || (live && (remoteState === "error" || noResults));
   const open = showList && (options.length > 0 || registryBlock);
   const activeIdx = Math.min(active, Math.max(options.length - 1, 0));
 
@@ -194,7 +245,21 @@ function ClientNameField({
   };
   const choose = (o: Option) => (o.kind === "local" ? pick(o.party) : pickRemote(o.hit));
 
+  /** On-demand mode: one paid run per click, results in the same dropdown. */
+  const startManualSearch = () => {
+    if (!onDemand || q.length < MIN_LOOKUP_CHARS || inFlight) return;
+    inputRef.current?.focus();
+    setDismissed(false);
+    setActive(local.length);
+    runSearch(q, false);
+  };
+
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && onDemand && (!open || options.length === 0)) {
+      e.preventDefault();
+      startManualSearch();
+      return;
+    }
     if (!open) {
       if (e.key === "ArrowDown" && dismissed) {
         e.preventDefault();
@@ -234,6 +299,7 @@ function ClientNameField({
     <div className="relative sm:col-span-6">
       <Field label={t("b.f.name")}>
         <Input
+          ref={inputRef}
           value={party.name}
           onChange={(e) => {
             onChange({ ...party, name: e.target.value });
@@ -256,6 +322,25 @@ function ClientNameField({
           aria-activedescendant={open && options.length ? `${listId}-${activeIdx}` : undefined}
         />
       </Field>
+      {onDemand ? (
+        <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
+          <span className={cx("text-xs", remoteState === "error" ? "text-amber-700" : "text-slate-500")}>
+            {remoteState === "error" ? t("b.clientBook.unavailable") : noResults ? t("b.clientBook.noResults") : t("b.clientBook.searchHint")}
+          </span>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={q.length < MIN_LOOKUP_CHARS}
+            loading={inFlight}
+            // mousedown would move the focus off the input and close the list
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={startManualSearch}
+          >
+            {inFlight ? null : <Icon name="globe" className="h-4 w-4" />} {t("b.clientBook.searchButton")}
+          </Button>
+        </div>
+      ) : null}
       {open ? (
         <ul
           id={listId}
@@ -337,11 +422,11 @@ function ClientNameField({
           })}
           {searching ? (
             <li className="flex items-center gap-2 px-3 py-2 text-xs text-slate-500">
-              <Spinner className="h-3.5 w-3.5" /> {t("b.clientBook.searching")}
+              <Spinner className="h-3.5 w-3.5" /> {t(onDemand ? "b.clientBook.searchingSlow" : "b.clientBook.searching")}
             </li>
-          ) : remoteState === "error" ? (
+          ) : live && remoteState === "error" ? (
             <li className="px-3 py-2 text-xs text-amber-700">{t("b.clientBook.unavailable")}</li>
-          ) : noResults ? (
+          ) : live && noResults ? (
             <li className="px-3 py-2 text-xs text-slate-500">{t("b.clientBook.noResults")}</li>
           ) : null}
         </ul>

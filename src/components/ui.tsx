@@ -75,7 +75,7 @@ export function Field({
   );
 }
 
-export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
+export function Input(props: React.ComponentProps<"input">) {
   const { className, ...rest } = props;
   return <input className={cx(inputClass, className)} {...rest} />;
 }

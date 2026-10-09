@@ -425,7 +425,12 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
             open={open.client}
             onToggle={toggle}
             title={t("b.sections.client")}
-            right={<span className="text-xs text-slate-400">{t(config.companyLookup ? "b.clientHintLookup" : "b.clientHint")}</span>}
+            right={
+              // hidden on phones: the field's own caption and button say the same thing, and this line would crowd the title
+              <span className="hidden text-xs text-slate-400 sm:inline">
+                {t(config.companyLookup === "on-demand" ? "b.clientHintSearch" : config.companyLookup === "autocomplete" ? "b.clientHintLookup" : "b.clientHint")}
+              </span>
+            }
           >
             <PartyForm party={quote.client} onChange={(p) => update({ client: p })} book={clientBook} onForget={forgetClient} lookup={config.companyLookup} />
           </Section>
