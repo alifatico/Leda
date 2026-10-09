@@ -140,3 +140,61 @@ describe("helpers", () => {
     expect(t.deposit).toBe(1050.42);
   });
 });
+
+describe("prestazione occasionale and fund contributions", () => {
+  it("occasional work: no VAT, no rivalsa, withholding on the fee, stamp duty above 77.47", () => {
+    const t = computeTotals(
+      q([{ quantity: 1, unitPrice: 1000, vatRate: 22 }], { prestazioneOccasionale: true, rivalsaInpsPct: 4, ritenutaAccontoPct: 20 }),
+    );
+    expect(t.rivalsa).toBe(0);
+    expect(t.vatTotal).toBe(0);
+    expect(t.vatGroups).toEqual([{ rate: 0, base: 1000, vat: 0 }]);
+    expect(t.bollo).toBe(2);
+    expect(t.total).toBe(1002);
+    expect(t.ritenuta).toBe(200);
+    expect(t.netPayable).toBe(802);
+  });
+
+  it("occasional work below the stamp-duty threshold and with a private client (no withholding)", () => {
+    const t = computeTotals(q([{ quantity: 1, unitPrice: 70, vatRate: 22 }], { prestazioneOccasionale: true, ritenutaAccontoPct: 0 }));
+    expect(t.bollo).toBe(0);
+    expect(t.total).toBe(70);
+    expect(t.netPayable).toBe(70);
+  });
+
+  it("forfettario wins over occasionale when both are set", () => {
+    const t = computeTotals(
+      q([{ quantity: 1, unitPrice: 1000, vatRate: 22 }], { regimeForfettario: true, prestazioneOccasionale: true, ritenutaAccontoPct: 20 }),
+    );
+    expect(t.ritenuta).toBe(0);
+    expect(t.vatTotal).toBe(0);
+  });
+
+  it("fund contribution (Inarcassa-style) is subject to VAT but excluded from the withholding base", () => {
+    const t = computeTotals(
+      q([{ quantity: 1, unitPrice: 1000, vatRate: 22 }], { rivalsaInpsPct: 4, rivalsaKind: "cassa", ritenutaAccontoPct: 20 }),
+    );
+    expect(t.rivalsa).toBe(40);
+    expect(t.taxable).toBe(1040);
+    expect(t.vatTotal).toBe(228.8);
+    expect(t.total).toBe(1268.8);
+    expect(t.ritenuta).toBe(200);
+    expect(t.netPayable).toBe(1068.8);
+  });
+
+  it("INPS rivalsa stays in the withholding base (default kind)", () => {
+    const t = computeTotals(q([{ quantity: 1, unitPrice: 1000, vatRate: 22 }], { rivalsaInpsPct: 4, rivalsaKind: "inps", ritenutaAccontoPct: 20 }));
+    expect(t.ritenuta).toBe(208);
+  });
+
+  it("schema accepts quotes saved before these options existed and the new values", () => {
+    const old = JSON.parse(JSON.stringify(sampleQuote("it")));
+    delete old.options.rivalsaKind;
+    delete old.options.prestazioneOccasionale;
+    expect(safeParseQuote(old).ok).toBe(true);
+    const withNew = { ...old, options: { ...old.options, rivalsaKind: "cassa", prestazioneOccasionale: true } };
+    const r = safeParseQuote(withNew);
+    expect(r.ok).toBe(true);
+    expect(safeParseQuote({ ...old, options: { ...old.options, rivalsaKind: "other" } }).ok).toBe(false);
+  });
+});

@@ -40,10 +40,19 @@ export function DetailsForm({ quote, onChange }: { quote: Quote; onChange: (patc
   );
 }
 
+type Regime = "ordinario" | "forfettario" | "occasionale";
+
 export function OptionsForm({ quote, onChange }: { quote: Quote; onChange: (patch: Partial<Quote>) => void }) {
   const { t } = useLocale();
   const o = quote.options;
   const set = (patch: Partial<QuoteOptions>) => onChange({ options: { ...o, ...patch } });
+  const regime: Regime = o.regimeForfettario ? "forfettario" : o.prestazioneOccasionale ? "occasionale" : "ordinario";
+  const setRegime = (r: Regime) => {
+    if (r === "forfettario") set({ regimeForfettario: true, prestazioneOccasionale: false, ritenutaAccontoPct: 0 });
+    else if (r === "occasionale") set({ regimeForfettario: false, prestazioneOccasionale: true, rivalsaInpsPct: 0, ritenutaAccontoPct: 20 });
+    else set({ regimeForfettario: false, prestazioneOccasionale: false });
+  };
+  const kind = o.rivalsaKind ?? "inps";
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
@@ -54,18 +63,42 @@ export function OptionsForm({ quote, onChange }: { quote: Quote; onChange: (patc
           <NumberInput value={o.depositPct} onChange={(n) => set({ depositPct: Math.min(100, Math.max(0, n)) })} />
         </Field>
       </div>
-      <Toggle checked={o.regimeForfettario} onChange={(v) => set({ regimeForfettario: v, ritenutaAccontoPct: v ? 0 : o.ritenutaAccontoPct })} label={t("b.opt.forfettario")} help={t("b.opt.forfettarioHelp")} />
-      <Toggle checked={o.rivalsaInpsPct > 0} onChange={(v) => set({ rivalsaInpsPct: v ? 4 : 0 })} label={t("b.opt.rivalsa")} help={t("b.opt.rivalsaHelp")} />
-      {o.rivalsaInpsPct > 0 ? (
-        <Field label={t("b.opt.rivalsaLabel")} hint={t("b.opt.rivalsaLabelHelp")}>
-          <Input value={o.rivalsaLabel ?? ""} onChange={(e) => set({ rivalsaLabel: e.target.value })} placeholder={t("b.opt.rivalsaLabelPh")} maxLength={80} />
-        </Field>
+      <Field label={t("b.opt.regime")} hint={t("b.opt.regimeHelp")}>
+        <Select value={regime} onChange={(e) => setRegime(e.target.value as Regime)}>
+          <option value="ordinario">{t("b.opt.regimeOrdinario")}</option>
+          <option value="forfettario">{t("b.opt.regimeForfettario")}</option>
+          <option value="occasionale">{t("b.opt.regimeOccasionale")}</option>
+        </Select>
+      </Field>
+      {regime !== "occasionale" ? (
+        <Toggle checked={o.rivalsaInpsPct > 0} onChange={(v) => set({ rivalsaInpsPct: v ? 4 : 0 })} label={t("b.opt.rivalsa")} help={t("b.opt.rivalsaHelp")} />
       ) : null}
-      {!o.regimeForfettario ? (
+      {regime !== "occasionale" && o.rivalsaInpsPct > 0 ? (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Field label={t("b.opt.rivalsaPct")}>
+            <NumberInput value={o.rivalsaInpsPct} onChange={(n) => set({ rivalsaInpsPct: Math.min(100, Math.max(0, n)) })} />
+          </Field>
+          <Field label={t("b.opt.rivalsaKind")} hint={t("b.opt.rivalsaKindHelp")}>
+            <Select value={kind} onChange={(e) => set({ rivalsaKind: e.target.value === "cassa" ? "cassa" : "inps" })}>
+              <option value="inps">{t("b.opt.rivalsaKindInps")}</option>
+              <option value="cassa">{t("b.opt.rivalsaKindCassa")}</option>
+            </Select>
+          </Field>
+          <Field label={t("b.opt.rivalsaLabel")} hint={t("b.opt.rivalsaLabelHelp")}>
+            <Input
+              value={o.rivalsaLabel ?? ""}
+              onChange={(e) => set({ rivalsaLabel: e.target.value })}
+              placeholder={kind === "cassa" ? t("b.opt.rivalsaLabelPhCassa") : t("b.opt.rivalsaLabelPh")}
+              maxLength={80}
+            />
+          </Field>
+        </div>
+      ) : null}
+      {regime !== "forfettario" ? (
         <Toggle checked={o.ritenutaAccontoPct > 0} onChange={(v) => set({ ritenutaAccontoPct: v ? 20 : 0 })} label={t("b.opt.ritenuta")} help={t("b.opt.ritenutaHelp")} />
       ) : null}
       <Toggle checked={o.bollo} onChange={(v) => set({ bollo: v })} label={t("b.opt.bollo")} help={t("b.opt.bolloHelp")} />
-      {!o.regimeForfettario && quote.items.some((i) => i.vatRate === 0) ? (
+      {regime === "ordinario" && quote.items.some((i) => i.vatRate === 0) ? (
         <Field label={t("b.opt.exemptNote")}>
           <Input value={o.vatExemptNote ?? ""} onChange={(e) => set({ vatExemptNote: e.target.value })} placeholder={t("b.opt.exemptNotePh")} />
         </Field>

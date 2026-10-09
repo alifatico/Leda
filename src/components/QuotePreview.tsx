@@ -9,6 +9,7 @@ import {
   formatNumber,
   formatPct,
   labelsFor,
+  rivalsaCaption,
   validUntil,
   type Party,
   type Quote,
@@ -22,6 +23,7 @@ export function QuotePreview({ quote, watermark = false, className = "" }: { quo
   const money = (n: number) => formatMoney(n, quote.currency, quote.lang);
   const showDisc = quote.items.some((i) => (i.discountPct ?? 0) > 0);
   const hasExempt = t.vatGroups.some((g) => g.rate === 0);
+  const occasionale = !quote.options.regimeForfettario && Boolean(quote.options.prestazioneOccasionale);
 
   return (
     <div className={"relative overflow-hidden bg-white text-[11px] leading-snug text-slate-900 " + className} style={{ fontFamily: "Helvetica, Arial, sans-serif" }}>
@@ -116,7 +118,7 @@ export function QuotePreview({ quote, watermark = false, className = "" }: { quo
             <Line label={L.net} value={money(t.net)} />
             {t.rivalsa > 0 ? (
               <>
-                <Line label={quote.options.rivalsaLabel || `${L.rivalsa} ${formatPct(quote.options.rivalsaInpsPct, quote.lang)}`} value={money(t.rivalsa)} />
+                <Line label={rivalsaCaption(quote.options, quote.lang)} value={money(t.rivalsa)} />
                 <Line label={L.taxable} value={money(t.taxable)} />
               </>
             ) : null}
@@ -148,10 +150,16 @@ export function QuotePreview({ quote, watermark = false, className = "" }: { quo
           </div>
         ) : null}
 
-        {quote.options.regimeForfettario || hasExempt || t.bollo > 0 ? (
+        {quote.options.regimeForfettario || occasionale || hasExempt || t.bollo > 0 ? (
           <div className="mt-4 space-y-0.5 text-[9px] text-slate-600">
             {quote.options.regimeForfettario ? <p>{L.forfettarioNote}</p> : null}
-            {hasExempt && !quote.options.regimeForfettario ? <p>{quote.options.vatExemptNote || L.exemptNote}</p> : null}
+            {occasionale ? (
+              <p>
+                {L.occasionaleNote}
+                {t.ritenuta > 0 ? ` ${L.occasionaleRitenutaNote}` : ""}
+              </p>
+            ) : null}
+            {hasExempt && !quote.options.regimeForfettario && !occasionale ? <p>{quote.options.vatExemptNote || L.exemptNote}</p> : null}
             {t.bollo > 0 ? <p>{L.bolloNote}</p> : null}
           </div>
         ) : null}

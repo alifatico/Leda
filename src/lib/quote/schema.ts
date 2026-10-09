@@ -31,9 +31,11 @@ const lineItemSchema = z.object({
 const optionsSchema = z.object({
   globalDiscountPct: z.number().finite().min(0).max(100),
   rivalsaInpsPct: z.number().finite().min(0).max(100),
+  rivalsaKind: z.enum(["inps", "cassa"]).optional(),
   rivalsaLabel: z.string().max(80).optional(),
   ritenutaAccontoPct: z.number().finite().min(0).max(100),
   regimeForfettario: z.boolean(),
+  prestazioneOccasionale: z.boolean().optional(),
   bollo: z.boolean(),
   depositPct: z.number().finite().min(0).max(100),
   vatExemptNote: z.string().max(500).optional(),

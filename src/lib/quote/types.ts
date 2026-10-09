@@ -41,17 +41,28 @@ export type LineItem = {
   discountPct?: number;
 };
 
+/**
+ * Who the 4% surcharge goes to. INPS Gestione Separata ("rivalsa") is part of the
+ * professional's income and subject to withholding; a professional fund's
+ * "contributo integrativo" (Inarcassa, Cassa Forense…) is not.
+ */
+export type RivalsaKind = "inps" | "cassa";
+
 export type QuoteOptions = {
   /** Discount applied on the whole quote, in percent */
   globalDiscountPct: number;
-  /** "Rivalsa INPS" (gestione separata): usually 0 or 4 */
+  /** "Rivalsa INPS" (gestione separata) or fund contribution: usually 0 or 4 */
   rivalsaInpsPct: number;
+  /** Default "inps" */
+  rivalsaKind?: RivalsaKind;
   /** Custom wording for the 4% surcharge, e.g. "Contributo integrativo Inarcassa 4%" */
   rivalsaLabel?: string;
   /** "Ritenuta d'acconto": usually 0 or 20 */
   ritenutaAccontoPct: number;
   /** Flat-rate scheme (regime forfettario): no VAT, no withholding, legal wording */
   regimeForfettario: boolean;
+  /** Occasional self-employment without a VAT number: no VAT (art. 5 DPR 633/72), withholding applies, no rivalsa */
+  prestazioneOccasionale?: boolean;
   /** Charge the €2.00 "imposta di bollo" when the VAT-exempt amount exceeds €77.47 */
   bollo: boolean;
   /** Deposit requested on acceptance, in percent of the amount due */

@@ -3,8 +3,8 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import type { Quote } from "@/lib/quote";
 import { QuoteDocument } from "./QuoteDocument";
 
-export async function renderQuotePdf(quote: Quote, opts: { watermark: boolean }): Promise<Uint8Array> {
-  const element = React.createElement(QuoteDocument, { quote, watermark: opts.watermark });
+export async function renderQuotePdf(quote: Quote, opts: { watermark: boolean; siteUrl?: string }): Promise<Uint8Array> {
+  const element = React.createElement(QuoteDocument, { quote, watermark: opts.watermark, siteUrl: opts.siteUrl });
   // renderToBuffer expects a <Document/> element
   const buf = await renderToBuffer(element as unknown as React.ReactElement<import("@react-pdf/renderer").DocumentProps>);
   return buf;

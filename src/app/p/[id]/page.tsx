@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -23,7 +24,7 @@ async function Loader({ params }: { params: Promise<{ id: string }> }) {
         <p className="text-xl font-semibold text-slate-900">Link non valido o disattivato · Invalid or disabled link</p>
         <p className="text-slate-600">Chiedi a chi ti ha inviato il preventivo un nuovo link. · Ask the sender for a new link.</p>
         <Link href="/" className="mt-2 text-sm font-medium text-indigo-600">
-          Preventivo Lampo
+          {BRAND}
         </Link>
       </div>
     );

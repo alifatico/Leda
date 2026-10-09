@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import { Landing } from "@/components/Landing";
 import { appUrl, businessEnv, publicConfig } from "@/lib/env";
 import { it } from "@/lib/i18n/dict";
@@ -13,7 +14,7 @@ export default function HomePage() {
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
-      name: "Preventivo Lampo",
+      name: BRAND,
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       url: appUrl(),

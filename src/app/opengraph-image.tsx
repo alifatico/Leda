@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import { ImageResponse } from "next/og";
 import { it } from "@/lib/i18n/dict";
 
@@ -23,7 +24,7 @@ export default function OpenGraphImage() {
       >
         <div style={{ display: "flex", alignItems: "center", gap: 18, fontSize: 36, fontWeight: 700 }}>
           <div style={{ display: "flex", width: 64, height: 64, borderRadius: 16, background: "#fbbf24", color: "#1e1b4b", alignItems: "center", justifyContent: "center", fontSize: 40 }}>⚡</div>
-          Preventivo Lampo
+          {BRAND}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <div style={{ fontSize: 72, fontWeight: 800, lineHeight: 1.05, letterSpacing: -2 }}>Preventivi professionali in PDF in 60 secondi</div>

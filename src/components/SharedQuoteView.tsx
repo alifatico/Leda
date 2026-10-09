@@ -1,5 +1,7 @@
 "use client";
 
+import { BRAND } from "@/lib/brand";
+
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "@/lib/client-api";
@@ -116,10 +118,18 @@ export function SharedQuoteView({ data, now }: { data: SharePublic; now: number 
           </div>
         </div>
 
+        <div className="mt-6 rounded-2xl border border-indigo-100 bg-indigo-50 p-5 text-center">
+          <p className="font-semibold text-slate-900">{t("p.ctaTitle")}</p>
+          <p className="mt-1 text-sm text-slate-600">{t("p.ctaText")}</p>
+          <Link href="/?utm_source=share&utm_medium=cta" className="mt-4 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+            <Icon name="bolt" className="h-4 w-4" /> {t("p.ctaButton")}
+          </Link>
+        </div>
+
         <p className="mt-6 text-center text-xs text-slate-400">
           {t("p.poweredBy")}{" "}
           <Link href="/" className="font-medium text-slate-500 hover:text-slate-700">
-            Preventivo Lampo
+            {BRAND}
           </Link>
         </p>
       </main>

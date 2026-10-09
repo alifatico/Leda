@@ -1,8 +1,9 @@
+import { BRAND } from "@/lib/brand";
 /* UI strings. `it` is the source of truth; `en` must have the same shape (enforced by the type). */
 
 export const it = {
   meta: {
-    title: "Preventivo Lampo — Preventivi professionali in PDF in 60 secondi",
+    title: `${BRAND} — Preventivi professionali in PDF in 60 secondi`,
     description:
       "Crea preventivi professionali in PDF in un minuto: rivalsa INPS, ritenuta d'acconto, regime forfettario, bollo. Nessuna registrazione, l'AI scrive le voci per te.",
   },
@@ -50,7 +51,7 @@ export const it = {
   compare: {
     title: "Perché non Word, un gestionale o un'altra app?",
     subtitle: "Confronto con le alternative che usano i freelance italiani.",
-    colUs: "Preventivo Lampo",
+    colUs: `${BRAND}`,
     colWord: "Word / Excel",
     colErp: "Gestionale di fatturazione",
     colAi: "App preventivi con AI",
@@ -156,6 +157,8 @@ export const it = {
     made: "Fatto in Italia con ⚡",
     templates: "Modelli per professione",
     ai: "Preventivo con AI",
+    tools: "Calcolatori fiscali",
+    guide: "Come fare un preventivo",
   },
   common: {
     close: "Chiudi",
@@ -232,12 +235,23 @@ export const it = {
       rivalsa: "Rivalsa INPS 4%",
       rivalsaHelp: "Per iscritti alla Gestione Separata INPS: si aggiunge al compenso ed è soggetta a IVA.",
       rivalsaLabel: "Dicitura della rivalsa",
-      rivalsaLabelHelp: "Lascia vuoto per \"Rivalsa INPS 4%\". Iscritti a una cassa? Scrivi ad es. \"Contributo integrativo Inarcassa 4%\".",
+      rivalsaLabelHelp: "Lascia vuoto per la dicitura standard, oppure scrivi ad es. \"Contributo integrativo Inarcassa 4%\".",
       rivalsaLabelPh: "Rivalsa INPS 4%",
       ritenuta: "Ritenuta d'acconto 20%",
       ritenutaHelp: "Se il cliente è un sostituto d'imposta (azienda o professionista), trattiene il 20% e lo versa per te.",
       forfettario: "Regime forfettario",
       forfettarioHelp: "Nessuna IVA, nessuna ritenuta e dicitura di legge in calce al documento.",
+      regime: "Regime fiscale",
+      regimeHelp: "Ordinario con IVA; forfettario: niente IVA né ritenuta; prestazione occasionale senza partita IVA: niente IVA, ritenuta 20%.",
+      regimeOrdinario: "Ordinario (con IVA)",
+      regimeForfettario: "Forfettario",
+      regimeOccasionale: "Prestazione occasionale (senza P. IVA)",
+      rivalsaPct: "Percentuale",
+      rivalsaKind: "Va a",
+      rivalsaKindHelp: "La rivalsa INPS entra nella base della ritenuta d'acconto; il contributo integrativo di cassa (Inarcassa, Cassa Forense…) no.",
+      rivalsaKindInps: "INPS Gestione Separata (rivalsa)",
+      rivalsaKindCassa: "Cassa di previdenza (contributo integrativo)",
+      rivalsaLabelPhCassa: "Contributo integrativo Inarcassa 4%",
       bollo: "Imposta di bollo 2 €",
       bolloHelp: "Addebitata quando gli importi esenti IVA superano 77,47 €.",
       deposit: "Acconto richiesto %",
@@ -292,7 +306,7 @@ export const it = {
       includesShare: "Entrambi includono l'invio al cliente con link e accettazione online.",
     },
     pro: {
-      title: "Preventivo Lampo Pro",
+      title: `${BRAND} Pro`,
       active: "Pro attivo",
       plan: "Piano {plan}",
       monthly: "mensile",
@@ -388,6 +402,9 @@ export const it = {
     notFoundText: "Chiedi a chi ti ha inviato il preventivo un nuovo link.",
     poweredBy: "Preventivo creato con",
     revision: "Versione {n}",
+    ctaTitle: "Serve un preventivo anche a te?",
+    ctaText: "Crealo gratis in 60 secondi, senza registrazione: IVA, rivalsa, ritenuta e forfettario già calcolati.",
+    ctaButton: "Crea il tuo preventivo",
   },
   legal: { privacy: "Privacy policy", terms: "Termini di servizio", updated: "Ultimo aggiornamento" },
 };
@@ -396,7 +413,7 @@ type Shape<T> = { [K in keyof T]: T[K] extends string ? string : Shape<T[K]> };
 
 export const en: Shape<typeof it> = {
   meta: {
-    title: "Preventivo Lampo — Professional PDF quotes in 60 seconds",
+    title: `${BRAND} — Professional PDF quotes in 60 seconds`,
     description:
       "Create professional PDF quotes in a minute: Italian INPS surcharge, withholding tax, flat-rate scheme, stamp duty. No sign-up, AI writes the line items for you.",
   },
@@ -439,7 +456,7 @@ export const en: Shape<typeof it> = {
   compare: {
     title: "Why not Word, an invoicing suite or another app?",
     subtitle: "How it compares with what Italian freelancers use today.",
-    colUs: "Preventivo Lampo",
+    colUs: `${BRAND}`,
     colWord: "Word / Excel",
     colErp: "Invoicing suite",
     colAi: "AI quote apps",
@@ -537,7 +554,7 @@ export const en: Shape<typeof it> = {
     q8: "I lost my Pro key",
     a8: "In the app, Pro section, enter the e-mail used for payment: we will send the key again.",
   },
-  footer: { tagline: "PDF quotes without the hassle.", privacy: "Privacy", terms: "Terms", contact: "Contact", made: "Made in Italy with ⚡", templates: "Templates by profession", ai: "AI quote" },
+  footer: { tagline: "PDF quotes without the hassle.", privacy: "Privacy", terms: "Terms", contact: "Contact", made: "Made in Italy with ⚡", templates: "Templates by profession", ai: "AI quote", tools: "Tax calculators", guide: "How to write a quote" },
   common: {
     close: "Close",
     cancel: "Cancel",
@@ -613,12 +630,23 @@ export const en: Shape<typeof it> = {
       rivalsa: "INPS surcharge 4%",
       rivalsaHelp: "For INPS Gestione Separata members: added on top of the fee and subject to VAT.",
       rivalsaLabel: "Surcharge wording",
-      rivalsaLabelHelp: "Leave empty for \"INPS surcharge 4%\". Members of a professional fund can write e.g. \"Inarcassa contribution 4%\".",
+      rivalsaLabelHelp: "Leave empty for the standard wording, or write e.g. \"Inarcassa contribution 4%\".",
       rivalsaLabelPh: "INPS surcharge 4%",
       ritenuta: "Withholding tax 20%",
       ritenutaHelp: "When the client is a withholding agent (company or professional) it withholds 20% and pays it for you.",
       forfettario: "Flat-rate scheme",
       forfettarioHelp: "No VAT, no withholding and the legal wording at the bottom of the document.",
+      regime: "Tax regime",
+      regimeHelp: "Standard with VAT; flat-rate scheme: no VAT, no withholding; occasional work without a VAT number: no VAT, 20% withholding.",
+      regimeOrdinario: "Standard (with VAT)",
+      regimeForfettario: "Flat-rate scheme",
+      regimeOccasionale: "Occasional work (no VAT number)",
+      rivalsaPct: "Percentage",
+      rivalsaKind: "Goes to",
+      rivalsaKindHelp: "The INPS surcharge is part of the withholding base; a professional fund's contribution is not.",
+      rivalsaKindInps: "INPS Gestione Separata (surcharge)",
+      rivalsaKindCassa: "Professional fund (integrative contribution)",
+      rivalsaLabelPhCassa: "Inarcassa contribution 4%",
       bollo: "Stamp duty €2",
       bolloHelp: "Charged when VAT-exempt amounts exceed €77.47.",
       deposit: "Deposit requested %",
@@ -673,7 +701,7 @@ export const en: Shape<typeof it> = {
       includesShare: "Both include sending to your client with a link and online acceptance.",
     },
     pro: {
-      title: "Preventivo Lampo Pro",
+      title: `${BRAND} Pro`,
       active: "Pro active",
       plan: "{plan} plan",
       monthly: "monthly",
@@ -769,6 +797,9 @@ export const en: Shape<typeof it> = {
     notFoundText: "Ask the sender for a new link.",
     poweredBy: "Quote created with",
     revision: "Version {n}",
+    ctaTitle: "Need a quote of your own?",
+    ctaText: "Create it free in 60 seconds, no sign-up: VAT, surcharges and withholding computed for you.",
+    ctaButton: "Create your quote",
   },
   legal: { privacy: "Privacy policy", terms: "Terms of service", updated: "Last updated" },
 };

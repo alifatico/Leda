@@ -20,16 +20,22 @@ function safeNum(n: number | undefined): number {
  *
  * Italian specifics handled here:
  *  - rivalsa INPS (4%): added on top of the net amount and subject to VAT
- *  - ritenuta d'acconto (20%): withheld by the client on net + rivalsa, never on VAT
+ *  - contributo integrativo di cassa (rivalsaKind "cassa"): like the rivalsa but
+ *    excluded from the withholding base
+ *  - ritenuta d'acconto (20%): withheld by the client on net (+ INPS rivalsa), never on VAT
  *  - imposta di bollo (€2): due when the VAT-exempt amount exceeds €77.47
  *  - regime forfettario: forces VAT 0 and no withholding
+ *  - prestazione occasionale (no VAT number): forces VAT 0 and no rivalsa, withholding applies
  */
 export function computeTotals(quote: Quote): Totals {
   const o = quote.options;
   const forfettario = o.regimeForfettario;
+  const occasionale = !forfettario && Boolean(o.prestazioneOccasionale);
+  const noVat = forfettario || occasionale;
   const globalPct = clampPct(o.globalDiscountPct);
-  const rivalsaPct = clampPct(o.rivalsaInpsPct);
+  const rivalsaPct = occasionale ? 0 : clampPct(o.rivalsaInpsPct);
   const ritenutaPct = forfettario ? 0 : clampPct(o.ritenutaAccontoPct);
+  const rivalsaWithheld = (o.rivalsaKind ?? "inps") === "inps";
 
   const lines: LineTotals[] = quote.items.map((it: LineItem) => {
     const qty = safeNum(it.quantity);
@@ -38,7 +44,7 @@ export function computeTotals(quote: Quote): Totals {
     const net = gross * (1 - clampPct(it.discountPct) / 100);
     const netAfterGlobal = net * (1 - globalPct / 100);
     const rivalsa = netAfterGlobal * (rivalsaPct / 100);
-    const vatRate = forfettario ? 0 : clampPct(it.vatRate);
+    const vatRate = noVat ? 0 : clampPct(it.vatRate);
     const vatBase = netAfterGlobal + rivalsa;
     const vat = vatBase * (vatRate / 100);
     return {
@@ -77,7 +83,7 @@ export function computeTotals(quote: Quote): Totals {
   const bollo = o.bollo && exemptBase > BOLLO_THRESHOLD ? BOLLO_AMOUNT : 0;
 
   const total = round2(taxable + vatTotal + bollo);
-  const ritenuta = round2(taxable * (ritenutaPct / 100));
+  const ritenuta = round2((rivalsaWithheld ? taxable : net) * (ritenutaPct / 100));
   const netPayable = round2(total - ritenuta);
   const deposit = round2(netPayable * (clampPct(o.depositPct) / 100));
 

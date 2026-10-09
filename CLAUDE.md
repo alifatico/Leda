@@ -13,3 +13,6 @@
 - `src/lib/professions.ts` holds the SEO pages' content and templates; sample quotes there must stay deterministic (fixed ids and timestamps) because `/preventivo/[slug]` is prerendered.
 - Comparison table and pricing copy in `dict.ts` cite competitor list prices checked in October 2026 (see `docs/COMPETITORS.md`); update both when prices change.
 - Production runs on Vercel (team `alifaticos-projects`, project `preventivo-lampo`, https://preventivo-lampo-amber.vercel.app, functions in `fra1`); Stripe live catalog ids, env vars already set and what is still missing are listed in `docs/LAUNCH.md`.
+- The product name lives in `src/lib/brand.ts` (`BRAND`); never hardcode it. "Preventivo Lampo" clashes with an existing app, see `docs/LAUNCH.md`.
+- Fiscal regimes: `regimeForfettario`, `prestazioneOccasionale` (no VAT number: no VAT, withholding, no rivalsa) and `rivalsaKind` ("inps" is withheld, "cassa" is not) are all handled in `calc.ts`; the regime select is in `OptionsForm.tsx`.
+- SEO content pages: `/strumenti/*` calculators and `/preventivo-forfettario`, `/preventivo-prestazione-occasionale`, `/come-fare-un-preventivo` use `src/components/ContentPage.tsx` + `FiscalCalculator` (deterministic quote, reuses `computeTotals`). Query presets for the builder: `src/lib/quote/preset.ts`.

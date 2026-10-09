@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import type { Metadata } from "next";
 import { LegalLayout } from "@/components/LegalLayout";
 import { businessEnv } from "@/lib/env";
@@ -10,7 +11,7 @@ export default function PrivacyPage() {
     <LegalLayout title="Privacy policy" updated="Ultimo aggiornamento: 8 ottobre 2026" supportEmail={b.email} businessName={b.name}>
       <p>
         Questa informativa descrive come <strong>{b.legal}</strong> ({b.address}, P. IVA {b.vat}), titolare del trattamento, tratta i dati personali degli utenti del servizio
-        Preventivo Lampo ai sensi del Regolamento (UE) 2016/679 (GDPR).
+        {BRAND} ai sensi del Regolamento (UE) 2016/679 (GDPR).
       </p>
       <h2>1. Dati trattati e finalità</h2>
       <ul>

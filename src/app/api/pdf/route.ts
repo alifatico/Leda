@@ -1,3 +1,4 @@
+import { appUrl } from "@/lib/env";
 import { jsonError, readJson } from "@/lib/http";
 import { entitles, verifyEntitlement } from "@/lib/license";
 import { pdfFilename, renderQuotePdf } from "@/lib/pdf/render";
@@ -31,7 +32,7 @@ export async function POST(req: Request) {
     return jsonError("The provided licence does not unlock this document", 402, { code: failure });
   }
 
-  const pdf = await renderQuotePdf(quote, { watermark: !paid });
+  const pdf = await renderQuotePdf(quote, { watermark: !paid, siteUrl: appUrl() });
   const ab = new ArrayBuffer(pdf.byteLength);
   new Uint8Array(ab).set(pdf);
   return new Response(ab, {

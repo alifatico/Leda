@@ -38,10 +38,22 @@ Team `alifaticos-projects` (piano Hobby), progetto `preventivo-lampo` (`prj_lj7t
 - Branch di produzione: su Vercel è `master`, il codice sta su `claude/amazing-thompson-wpeq5s` e il deploy di produzione è stato lanciato a mano da quel branch. Per i deploy automatici: Settings → Git → Production Branch = `claude/amazing-thompson-wpeq5s`, oppure merge su `master`.
 - Il piano Hobby vieta l'uso commerciale: passare a Pro prima di incassare.
 
+## Nome: da cambiare prima del lancio
+
+"Preventivo Lampo" è già un'app mobile concorrente (preventivolampo.it, Pro 9,99 €/mese) e i domini preventivolampo.it/.com/.eu sono presi. Il nome è centralizzato in `src/lib/brand.ts` (`BRAND`): cambiarlo lì, poi dominio (`APP_URL`), `BUSINESS_NAME` su Vercel, nome pubblico e prodotti su Stripe. Domini liberi verificati su Vercel il 9 ottobre 2026 (11,25 $/anno, solo .com; tutti i .it corrispondenti sono occupati): preventivopdf.com, preventivonetto.com, preventivissimo.com, preventivosemplice.com, preventivopronto.com, preventivozero.com, facciopreventivo.com, preventivoinunminuto.com. Anche preventivolampo.app (14,99 $) è libero ma mantiene il clash.
+
+## Traffico senza intervento manuale (costruito il 9 ottobre 2026)
+
+- Loop di prodotto: il PDF gratuito ha un link al sito nel piè di pagina (`utm_source=pdf`), la pagina pubblica del preventivo ha il box "Serve un preventivo anche a te?" (`utm_source=share`).
+- Calcolatori che attirano link: `/strumenti/calcolo-ritenuta-acconto`, `/strumenti/calcolo-rivalsa-inps`, `/strumenti/imposta-di-bollo-2-euro`; ognuno apre il builder con i numeri (`/app?regime=…&amount=…&rivalsa=…&ritenuta=…&vat=…`, vedi `src/lib/quote/preset.ts`).
+- Guide per le query scoperte: `/preventivo-forfettario`, `/preventivo-prestazione-occasionale`, `/come-fare-un-preventivo`; tutte con FAQ e breadcrumb in JSON-LD, linkate dal footer e dalle pagine professione.
+- Motore: modalità "prestazione occasionale" (niente IVA, ritenuta 20%, bollo, diciture) e distinzione rivalsa INPS / contributo integrativo di cassa (fuori dalla ritenuta), con test.
+- Prossimi contenuti a costo zero: pagine per città sulle professioni artigiane solo quando le pagine professione portano traffico; 3 articoli "come fare un preventivo per <settore>" linkati dalle guide.
+
 ## Giorno 0 — mettere in produzione (1 ora)
 
 - [x] Progetto Vercel creato, variabili non segrete impostate, primo deploy di produzione online (vedi sopra).
-- [ ] Dominio: `preventivolampo.it` (o `.com`) → Vercel. Verifica disponibilità e marchio prima di registrare.
+- [ ] Nome nuovo e dominio (vedi sopra) → Vercel; poi Search Console con `GOOGLE_SITE_VERIFICATION`.
 - [ ] Stripe live: chiave `sk_live_…` su Vercel (catalogo e portale già creati, vedi sopra), ricevute email attive (Settings → Emails).
 - [ ] Variabili `BUSINESS_*`, `SUPPORT_EMAIL`: compaiono in footer, privacy e termini (obbligatorie per vendere online in Italia).
 - [ ] Pagamento di prova reale da 4,90 € con la tua carta, poi rimborso dal dashboard.

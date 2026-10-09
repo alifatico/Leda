@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import type { DocLang } from "./types";
 
 /** Words printed inside the PDF/preview, in the document's own language. */
@@ -27,6 +28,7 @@ export const docLabels = {
     globalDiscount: "Sconto",
     net: "Imponibile",
     rivalsa: "Rivalsa INPS",
+    contributoIntegrativo: "Contributo integrativo",
     taxable: "Totale imponibile",
     vatOn: "IVA",
     bollo: "Imposta di bollo",
@@ -41,11 +43,14 @@ export const docLabels = {
     forfettarioNote:
       "Operazione senza applicazione dell'IVA ai sensi dell'art. 1, commi da 54 a 89, L. 190/2014 (regime forfettario). Non soggetta a ritenuta d'acconto ai sensi dell'art. 1, comma 67, L. 190/2014.",
     bolloNote: "Imposta di bollo assolta sull'originale (€ 2,00) per importi esenti IVA superiori a € 77,47.",
+    occasionaleNote:
+      "Prestazione di lavoro autonomo occasionale ai sensi dell'art. 2222 c.c., non soggetta a IVA per mancanza del presupposto soggettivo (art. 5 DPR 633/72).",
+    occasionaleRitenutaNote: "Compenso soggetto a ritenuta d'acconto del 20% ai sensi dell'art. 25 DPR 600/73.",
     exemptNote: "Operazione esente / non soggetta a IVA.",
     preview: "ANTEPRIMA",
     page: "Pagina",
     of: "di",
-    generatedWith: "Preventivo generato con Preventivo Lampo",
+    generatedWith: `Preventivo generato con ${BRAND}`,
   },
   en: {
     quote: "QUOTE",
@@ -72,6 +77,7 @@ export const docLabels = {
     globalDiscount: "Discount",
     net: "Net amount",
     rivalsa: "INPS surcharge",
+    contributoIntegrativo: "Fund contribution",
     taxable: "Taxable amount",
     vatOn: "VAT",
     bollo: "Stamp duty",
@@ -86,11 +92,14 @@ export const docLabels = {
     forfettarioNote:
       "VAT not applied pursuant to art. 1, par. 54–89, Italian Law 190/2014 (flat-rate scheme). Not subject to withholding tax pursuant to art. 1, par. 67, Law 190/2014.",
     bolloNote: "Stamp duty (€ 2.00) paid on the original for VAT-exempt amounts above € 77.47.",
+    occasionaleNote:
+      "Occasional self-employed work pursuant to art. 2222 of the Italian Civil Code, outside the scope of VAT (art. 5 DPR 633/72).",
+    occasionaleRitenutaNote: "Fee subject to 20% withholding tax pursuant to art. 25 DPR 600/73.",
     exemptNote: "VAT exempt / out of scope.",
     preview: "PREVIEW",
     page: "Page",
     of: "of",
-    generatedWith: "Quote generated with Preventivo Lampo",
+    generatedWith: `Quote generated with ${BRAND}`,
   },
 } as const satisfies Record<DocLang, Record<string, string>>;
 

@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import { NextResponse } from "next/server";
 import { escapeHtml, sendEmail } from "@/lib/email";
 import { appUrl, businessEnv, emailEnv, paymentsEnabled } from "@/lib/env";
@@ -33,7 +34,7 @@ export async function POST(req: Request) {
       const lic = makeProLicense({ sub: found.sub, cus: found.cus, email, plan: found.plan, periodEndSec: found.periodEndSec });
       const token = signEntitlement(lic);
       const link = `${appUrl()}/app?license=${encodeURIComponent(token)}`;
-      const subject = it ? "La tua chiave Preventivo Lampo Pro" : "Your Preventivo Lampo Pro key";
+      const subject = it ? `La tua chiave ${BRAND} Pro` : `Your ${BRAND} Pro key`;
       const text = it
         ? `Ecco la tua chiave di licenza Pro:\n\n${token}\n\nApri questo link per attivarla automaticamente:\n${link}\n`
         : `Here is your Pro licence key:\n\n${token}\n\nOpen this link to activate it automatically:\n${link}\n`;

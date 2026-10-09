@@ -1,10 +1,15 @@
 "use client";
 
+import { BRAND } from "@/lib/brand";
+
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
 import { useLocale } from "@/lib/i18n/context";
 import { LocaleSwitch } from "./LocaleSwitch";
 import { Icon } from "./ui";
+
+const [brandFirst, ...brandRestWords] = BRAND.split(" ");
+const brandRest = brandRestWords.join(" ");
 
 export function Logo({ className = "" }: { className?: string }) {
   return (
@@ -13,7 +18,8 @@ export function Logo({ className = "" }: { className?: string }) {
         <Icon name="bolt" className="h-5 w-5" />
       </span>
       <span>
-        Preventivo <span className="text-indigo-600">Lampo</span>
+        {brandFirst}
+        {brandRest ? <span className="text-indigo-600"> {brandRest}</span> : null}
       </span>
     </Link>
   );
@@ -68,6 +74,12 @@ export function SiteFooter({ supportEmail, businessName }: { supportEmail: strin
           </Link>
           <Link href="/preventivo-ai" className="hover:text-slate-900">
             {t("footer.ai")}
+          </Link>
+          <Link href="/strumenti" className="hover:text-slate-900">
+            {t("footer.tools")}
+          </Link>
+          <Link href="/come-fare-un-preventivo" className="hover:text-slate-900">
+            {t("footer.guide")}
           </Link>
           <Link href="/privacy" className="hover:text-slate-900">
             {t("footer.privacy")}

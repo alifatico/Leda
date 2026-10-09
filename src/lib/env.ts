@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import { createHash } from "node:crypto";
 
 /**
@@ -67,11 +68,11 @@ export const aiEnv = {
 
 export const emailEnv = {
   resendApiKey: () => first(process.env.RESEND_API_KEY),
-  from: () => first(process.env.EMAIL_FROM) ?? "Preventivo Lampo <onboarding@resend.dev>",
+  from: () => first(process.env.EMAIL_FROM) ?? `${BRAND} <onboarding@resend.dev>`,
 };
 
 export const businessEnv = {
-  name: () => first(process.env.BUSINESS_NAME) ?? "Preventivo Lampo",
+  name: () => first(process.env.BUSINESS_NAME) ?? `${BRAND}`,
   legalName: () => first(process.env.BUSINESS_LEGAL_NAME) ?? first(process.env.BUSINESS_NAME) ?? "[Ragione sociale]",
   address: () => first(process.env.BUSINESS_ADDRESS) ?? "[Indirizzo]",
   vat: () => first(process.env.BUSINESS_VAT) ?? "[Partita IVA]",
@@ -80,6 +81,8 @@ export const businessEnv = {
 
 export const analyticsEnv = {
   plausibleDomain: () => first(process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN),
+  /** Google Search Console HTML-tag verification token */
+  googleSiteVerification: () => first(process.env.GOOGLE_SITE_VERIFICATION),
 };
 
 export type PlanId = "single" | "pro_monthly" | "pro_yearly";

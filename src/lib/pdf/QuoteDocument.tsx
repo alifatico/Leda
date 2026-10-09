@@ -1,5 +1,6 @@
+import { BRAND } from "@/lib/brand";
 import React from "react";
-import { Document, Font, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Document, Font, Image, Link, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import {
   addressLines,
   computeTotals,
@@ -8,6 +9,7 @@ import {
   formatNumber,
   formatPct,
   labelsFor,
+  rivalsaCaption,
   validUntil,
   type Quote,
   type Party,
@@ -142,7 +144,7 @@ const styles = StyleSheet.create({
   },
 });
 
-type Props = { quote: Quote; watermark: boolean };
+type Props = { quote: Quote; watermark: boolean; /** Public site URL, printed as a link in the footer of free (watermarked) PDFs */ siteUrl?: string };
 
 type ViewStyle = React.ComponentProps<typeof View>["style"];
 
@@ -189,7 +191,7 @@ function PartyBlock({ party, label, boxStyle, lang }: { party: Party; label: str
   );
 }
 
-export function QuoteDocument({ quote, watermark }: Props) {
+export function QuoteDocument({ quote, watermark, siteUrl }: Props) {
   const L = labelsFor(quote.lang);
   const t = computeTotals(quote);
   const color = /^#[0-9a-fA-F]{6}$/.test(quote.branding.color) ? quote.branding.color : "#1E3A8A";
@@ -198,15 +200,17 @@ export function QuoteDocument({ quote, watermark }: Props) {
   const money = (n: number) => formatMoney(n, cur, lang);
   const showDiscountCol = quote.items.some((i) => (i.discountPct ?? 0) > 0);
   const hasExempt = t.vatGroups.some((g) => g.rate === 0);
+  const occasionale = !quote.options.regimeForfettario && Boolean(quote.options.prestazioneOccasionale);
+  const siteHost = siteUrl ? siteUrl.replace(/^https?:\/\//, "").replace(/\/$/, "") : "";
   const title = s(quote.subject);
 
   return (
     <Document
       title={`${L.quote} ${s(quote.number)}`}
-      author={s(quote.sender.name) || "Preventivo Lampo"}
+      author={s(quote.sender.name) || BRAND}
       subject={title}
-      creator="Preventivo Lampo"
-      producer="Preventivo Lampo"
+      creator={BRAND}
+      producer={BRAND}
       language={lang}
     >
       <Page size="A4" style={styles.page}>
@@ -320,7 +324,7 @@ export function QuoteDocument({ quote, watermark }: Props) {
               <>
                 <View style={styles.totalLine}>
                   <Text style={styles.totalLabel}>
-                    {quote.options.rivalsaLabel ? s(quote.options.rivalsaLabel) : `${L.rivalsa} ${formatPct(quote.options.rivalsaInpsPct, lang)}`}
+                    {s(rivalsaCaption(quote.options, lang))}
                   </Text>
                   <Text style={styles.totalValue}>{money(t.rivalsa)}</Text>
                 </View>
@@ -392,10 +396,16 @@ export function QuoteDocument({ quote, watermark }: Props) {
         ) : null}
 
         {/* Legal wording */}
-        {quote.options.regimeForfettario || (hasExempt && !quote.options.regimeForfettario) || t.bollo > 0 ? (
+        {quote.options.regimeForfettario || occasionale || hasExempt || t.bollo > 0 ? (
           <View style={styles.legal}>
             {quote.options.regimeForfettario ? <Text>{L.forfettarioNote}</Text> : null}
-            {hasExempt && !quote.options.regimeForfettario ? (
+            {occasionale ? (
+              <Text>
+                {L.occasionaleNote}
+                {t.ritenuta > 0 ? ` ${L.occasionaleRitenutaNote}` : ""}
+              </Text>
+            ) : null}
+            {hasExempt && !quote.options.regimeForfettario && !occasionale ? (
               <Text>{s(quote.options.vatExemptNote) || L.exemptNote}</Text>
             ) : null}
             {t.bollo > 0 ? <Text>{L.bolloNote}</Text> : null}
@@ -417,7 +427,14 @@ export function QuoteDocument({ quote, watermark }: Props) {
 
         {/* Footer */}
         <View style={styles.footer} fixed>
-          <Text style={{ fontFamily: FONT_OBLIQUE }}>{watermark ? L.generatedWith : s(quote.sender.name)}</Text>
+          {watermark ? (
+            <Link src={`${siteUrl || "https://" + siteHost || "/"}${siteUrl ? "/?utm_source=pdf&utm_medium=footer" : ""}`} style={{ fontFamily: FONT_OBLIQUE, color: GRAY_400, textDecoration: "none" }}>
+              {L.generatedWith}
+              {siteHost ? ` · ${siteHost}` : ""}
+            </Link>
+          ) : (
+            <Text style={{ fontFamily: FONT_OBLIQUE }}>{s(quote.sender.name)}</Text>
+          )}
           <Text render={({ pageNumber, totalPages }) => `${L.page} ${pageNumber} ${L.of} ${totalPages}`} />
         </View>
       </Page>

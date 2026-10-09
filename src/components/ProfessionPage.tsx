@@ -4,6 +4,14 @@ import { QuotePreview } from "./QuotePreview";
 import { SiteFooter, SiteHeader } from "./SiteChrome";
 import { Icon } from "./ui";
 
+const GUIDES = [
+  { href: "/come-fare-un-preventivo", label: "Come fare un preventivo" },
+  { href: "/preventivo-forfettario", label: "Preventivo in regime forfettario" },
+  { href: "/preventivo-prestazione-occasionale", label: "Preventivo senza partita IVA" },
+  { href: "/strumenti/calcolo-ritenuta-acconto", label: "Calcolo ritenuta d'acconto" },
+  { href: "/strumenti/calcolo-rivalsa-inps", label: "Calcolo rivalsa INPS 4%" },
+];
+
 /** Static, Italian-only SEO page for one profession (server component). */
 export function ProfessionPage({ p, supportEmail, businessName, singlePrice }: { p: Profession; supportEmail: string; businessName: string; singlePrice: string }) {
   const sample = sampleQuoteFor(p);
@@ -31,7 +39,7 @@ export function ProfessionPage({ p, supportEmail, businessName, singlePrice }: {
                 <Icon name="bolt" className="h-5 w-5" /> Usa questo modello gratis
               </Link>
               <a href={`/api/pdf/sample?template=${p.slug}`} target="_blank" rel="noopener" className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-base font-medium text-slate-800 hover:bg-slate-50">
-                <Icon name="file" className="h-5 w-5" /> Vedi l&apos;esempio in PDF
+                <Icon name="file" className="h-5 w-5" /> Fac simile in PDF
               </a>
             </div>
             <p className="mt-4 text-sm text-slate-500">Senza registrazione. Modifichi voci e prezzi, scarichi la prova gratis; il PDF pulito costa {singlePrice}, oppure Pro per preventivi illimitati.</p>
@@ -101,6 +109,19 @@ export function ProfessionPage({ p, supportEmail, businessName, singlePrice }: {
                   </details>
                 ))}
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-t border-slate-100 py-8">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <h2 className="text-lg font-semibold text-slate-900">Guide e calcolatori utili</h2>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {GUIDES.map((g) => (
+                <Link key={g.href} href={g.href} className="rounded-full border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:border-indigo-300 hover:text-indigo-700">
+                  {g.label}
+                </Link>
+              ))}
             </div>
           </div>
         </section>

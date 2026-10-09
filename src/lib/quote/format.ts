@@ -1,4 +1,5 @@
-import type { DocLang } from "./types";
+import { labelsFor } from "./labels";
+import type { DocLang, QuoteOptions } from "./types";
 
 const localeOf: Record<DocLang, string> = { it: "it-IT", en: "en-GB" };
 
@@ -52,4 +53,12 @@ export function addressLines(p: {
   if (cityLine) out.push(cityLine);
   if (p.country) out.push(p.country);
   return out;
+}
+
+/** Label of the 4% line: custom wording, else "Rivalsa INPS 4%" or "Contributo integrativo 4%". */
+export function rivalsaCaption(options: Pick<QuoteOptions, "rivalsaInpsPct" | "rivalsaKind" | "rivalsaLabel">, lang: DocLang): string {
+  if (options.rivalsaLabel) return options.rivalsaLabel;
+  const L = labelsFor(lang);
+  const base = options.rivalsaKind === "cassa" ? L.contributoIntegrativo : L.rivalsa;
+  return `${base} ${formatPct(options.rivalsaInpsPct, lang)}`;
 }

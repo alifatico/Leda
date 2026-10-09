@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import type { Metadata } from "next";
 import { LegalLayout } from "@/components/LegalLayout";
 import { businessEnv, getPricing } from "@/lib/env";
@@ -12,7 +13,7 @@ export default function TermsPage() {
     <LegalLayout title="Termini di servizio" updated="Ultimo aggiornamento: 8 ottobre 2026" supportEmail={b.email} businessName={b.name}>
       <h2>1. Il servizio</h2>
       <p>
-        Preventivo Lampo (&quot;Servizio&quot;) è un&apos;applicazione web fornita da <strong>{b.legal}</strong> ({b.address}, P. IVA {b.vat}) che consente di creare preventivi e di
+        {BRAND} (&quot;Servizio&quot;) è un&apos;applicazione web fornita da <strong>{b.legal}</strong> ({b.address}, P. IVA {b.vat}) che consente di creare preventivi e di
         esportarli in formato PDF. L&apos;uso del Servizio implica l&apos;accettazione dei presenti Termini.
       </p>
       <h2>2. Piani e prezzi</h2>

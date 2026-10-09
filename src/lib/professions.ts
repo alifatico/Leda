@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import type { LineItem, Quote, QuoteOptions } from "./quote";
 import { newQuote } from "./quote";
 
@@ -183,7 +184,7 @@ export const professions: Profession[] = [
     faq: [
       { q: "Quanto costa un articolo SEO?", a: "Tra 80 e 250 € a seconda di lunghezza, ricerca keyword e complessità del settore. I testi delle pagine principali di un sito valgono 120-300 € a pagina." },
       { q: "Tariffa a cartella o a progetto?", a: "A progetto per siti e campagne, dove conta il risultato. A cartella (1.800 battute) solo per volumi ripetitivi e omogenei." },
-      { q: "Forfettario: cosa cambia nel preventivo?", a: "Niente IVA e niente ritenuta; il documento riporta la dicitura di legge. Preventivo Lampo lo fa con un interruttore." },
+      { q: "Forfettario: cosa cambia nel preventivo?", a: `Niente IVA e niente ritenuta; il documento riporta la dicitura di legge. ${BRAND} lo fa con un interruttore.` },
     ],
   },
   {
@@ -224,7 +225,7 @@ export const professions: Profession[] = [
     metaDescription:
       "Preventivo per attività di consulenza: tariffa a giornata o a progetto, rivalsa INPS 4%, ritenuta d'acconto 20% e acconto. Modello precompilato da scaricare in PDF.",
     intro: [
-      "Il consulente iscritto alla Gestione Separata INPS ha due righe in più rispetto agli altri: la rivalsa INPS del 4%, che si aggiunge al compenso ed è soggetta a IVA, e la ritenuta d'acconto del 20% che il cliente trattiene e versa per conto suo. Preventivo Lampo le calcola entrambe e mostra il netto a pagare.",
+      `Il consulente iscritto alla Gestione Separata INPS ha due righe in più rispetto agli altri: la rivalsa INPS del 4%, che si aggiunge al compenso ed è soggetta a IVA, e la ritenuta d'acconto del 20% che il cliente trattiene e versa per conto suo. ${BRAND} le calcola entrambe e mostra il netto a pagare.`,
       "Per i progetti con obiettivi definiti preferisci il compenso a corpo; per il supporto continuativo la tariffa a giornata con un numero minimo di giornate al mese.",
     ],
     subject: "Consulenza strategica di marketing (3 mesi)",
@@ -244,7 +245,7 @@ export const professions: Profession[] = [
     faq: [
       { q: "Quanto costa una giornata di consulenza?", a: "In Italia un consulente senior chiede 400-900 € a giornata più IVA, a seconda del settore e dell'esperienza. Le tariffe junior partono da 250 €." },
       { q: "Come si calcola la ritenuta d'acconto?", a: "Il 20% sul compenso più la rivalsa INPS, mai sull'IVA. Esempio: 1.000 € + 40 € di rivalsa = 1.040 € imponibile; IVA 228,80 €; ritenuta 208 €; netto a pagare 1.060,80 €." },
-      { q: "Il preventivo vale come contratto?", a: "Se il cliente lo accetta per iscritto, sì. Con Preventivo Lampo puoi inviarlo con un link e ricevere l'accettazione online." },
+      { q: "Il preventivo vale come contratto?", a: `Se il cliente lo accetta per iscritto, sì. Con ${BRAND} puoi inviarlo con un link e ricevere l'accettazione online.` },
     ],
   },
   {
@@ -570,7 +571,7 @@ export const professions: Profession[] = [
       "Modello di preventivo per personal trainer: pacchetti di sessioni, piani di allenamento, coaching online, lezioni di gruppo. Prezzi di riferimento e PDF immediato.",
     intro: [
       "I personal trainer vendono pacchetti: 10 o 20 sessioni con una scadenza, piani di allenamento a distanza, percorsi mensili. Il preventivo scritto, anche per un privato, chiarisce durata delle sessioni, validità del pacchetto, politica per le cancellazioni e cosa succede alle sessioni non usate.",
-      "Per le aziende (corporate wellness) e le palestre si aggiungono ritenuta d'acconto e fatturazione mensile: con Preventivo Lampo basta attivare le opzioni.",
+      `Per le aziende (corporate wellness) e le palestre si aggiungono ritenuta d'acconto e fatturazione mensile: con ${BRAND} basta attivare le opzioni.`,
     ],
     subject: "Percorso di allenamento personalizzato (3 mesi)",
     items: [
@@ -650,7 +651,7 @@ export const professions: Profession[] = [
     ],
     faq: [
       { q: "Quanto costa un sito web da agenzia?", a: "Un sito corporate su misura da agenzia costa 5.000-15.000 € più IVA; e-commerce 10.000-40.000 €. I canoni SEO partono da 500 € al mese, l'advertising da 400 € più budget." },
-      { q: "Il cliente può accettare online?", a: "Sì, con Preventivo Lampo il cliente apre il link, scarica il PDF e accetta con nome e data: l'agenzia riceve l'avviso via email." },
+      { q: "Il cliente può accettare online?", a: `Sì, con ${BRAND} il cliente apre il link, scarica il PDF e accetta con nome e data: l'agenzia riceve l'avviso via email.` },
       { q: "Ritenuta d'acconto per le agenzie?", a: "No: la ritenuta riguarda i compensi di lavoro autonomo. Le società di capitali fatturano senza ritenuta." },
     ],
   },

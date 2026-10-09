@@ -7,7 +7,7 @@ import { track } from "@/lib/analytics";
 import { api, ApiError, downloadBlob, formatPrice } from "@/lib/client-api";
 import type { PlanId, PublicConfig } from "@/lib/env";
 import { useLocale } from "@/lib/i18n/context";
-import { newId, nextQuoteNumber, type LineItem, type Quote } from "@/lib/quote";
+import { applyPreset, hasPreset, type LineItem, newId, nextQuoteNumber, type Quote } from "@/lib/quote";
 import { createQuoteFromProfile, createQuoteFromTemplate, profileStore, quotesStore, type ShareInfo, type StoredQuote } from "@/lib/storage";
 import { LocaleSwitch } from "../LocaleSwitch";
 import { QuotePreview } from "../QuotePreview";
@@ -87,9 +87,12 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
       setQuotes(all);
       const wanted = searchParams.get("doc");
       const template = searchParams.get("template");
-      const found = !template && ((wanted && all.find((s) => s.quote.id === wanted)) || all[0]);
+      const preset = !template && hasPreset(searchParams);
+      const found = !template && !preset && ((wanted && all.find((s) => s.quote.id === wanted)) || all[0]);
       if (template) {
         setQuote(createQuoteFromTemplate(template) ?? createQuoteFromProfile());
+      } else if (preset) {
+        setQuote(applyPreset(createQuoteFromProfile(), searchParams));
       } else if (found) {
         setQuote(found.quote);
         setUnlock(found.unlock);
@@ -105,7 +108,7 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
       }
       if (searchParams.get("checkout") === "canceled") show(t("b.canceled"));
       if (searchParams.get("plan")) setPaywall(true);
-      if (lic || searchParams.get("checkout") || searchParams.get("plan") || template || searchParams.get("ai")) router.replace("/app");
+      if (lic || searchParams.get("checkout") || searchParams.get("plan") || template || preset || searchParams.get("ai")) router.replace("/app");
       api.config().then((c) => !cancelled && setConfig(c)).catch(() => undefined);
     });
     return () => {

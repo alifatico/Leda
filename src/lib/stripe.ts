@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import Stripe from "stripe";
 import { appUrl, getPricing, stripeEnv, type PlanId } from "./env";
 
@@ -8,7 +9,7 @@ export function getStripe(): Stripe | null {
   if (!key) return null;
   if (!cached) {
     cached = new Stripe(key, {
-      appInfo: { name: "Preventivo Lampo", url: "https://github.com/alifatico/leda" },
+      appInfo: { name: `${BRAND}`, url: "https://github.com/alifatico/leda" },
       maxNetworkRetries: 2,
       timeout: 20_000,
     });
@@ -25,13 +26,13 @@ export function isPlanId(x: unknown): x is PlanId {
 const productCopy = {
   it: {
     single: { name: "Preventivo PDF", description: "Download del preventivo in PDF senza filigrana" },
-    pro_monthly: { name: "Preventivo Lampo Pro", description: "Preventivi PDF illimitati, abbonamento mensile" },
-    pro_yearly: { name: "Preventivo Lampo Pro (annuale)", description: "Preventivi PDF illimitati per 12 mesi" },
+    pro_monthly: { name: `${BRAND} Pro`, description: "Preventivi PDF illimitati, abbonamento mensile" },
+    pro_yearly: { name: `${BRAND} Pro (annuale)`, description: "Preventivi PDF illimitati per 12 mesi" },
   },
   en: {
     single: { name: "Quote PDF", description: "Download this quote as a PDF without watermark" },
-    pro_monthly: { name: "Preventivo Lampo Pro", description: "Unlimited PDF quotes, monthly subscription" },
-    pro_yearly: { name: "Preventivo Lampo Pro (yearly)", description: "Unlimited PDF quotes for 12 months" },
+    pro_monthly: { name: `${BRAND} Pro`, description: "Unlimited PDF quotes, monthly subscription" },
+    pro_yearly: { name: `${BRAND} Pro (yearly)`, description: "Unlimited PDF quotes for 12 months" },
   },
 } as const;
 
