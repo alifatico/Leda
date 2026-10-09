@@ -27,8 +27,20 @@ STRIPE_PORTAL_CONFIGURATION=bpc_1UOZoqPFKsiVAwzRz4ajvCKA
 
 Con una chiave di test (`sk_test_…`) lascia vuote le variabili `STRIPE_PRICE_*`: l'app crea i prezzi al volo. Il nome pubblico dell'account Stripe risulta "PreventivoFacile": allinealo a "Preventivo Lampo" in Stripe → Settings → Public details, perché compare su ricevute ed estratti conto, e "Preventivi Facili" è già il nome di un'app concorrente.
 
+## Vercel: progetto creato il 9 ottobre 2026
+
+Team `alifaticos-projects` (piano Hobby), progetto `preventivo-lampo` (`prj_lj7tX1ddvzNhCAZl9ZrtseCwVy6y`) collegato al repo GitHub `alifatico/Leda`, Node 24, funzioni nella regione `fra1` (Francoforte).
+
+- URL pubblico: https://preventivo-lampo-amber.vercel.app. È anche `VERCEL_PROJECT_PRODUCTION_URL`, quindi `appUrl()`, sitemap e redirect di Stripe puntano lì finché non c'è un dominio custom.
+- Variabili già impostate: `LICENSE_SECRET` (production + preview, sensibile), `STRIPE_PRICE_SINGLE`, `STRIPE_PRICE_PRO_MONTHLY`, `STRIPE_PRICE_PRO_YEARLY`, `STRIPE_PORTAL_CONFIGURATION`, `BUSINESS_NAME`, `SUPPORT_EMAIL` (production).
+- Mancano e le può aggiungere solo il titolare da Settings → Environment Variables: `STRIPE_SECRET_KEY` (senza, `/api/config` risponde `payments: false` e si scarica solo il PDF con filigrana), `ANTHROPIC_API_KEY`, Upstash Redis dal marketplace (abilita "Invia al cliente"), `RESEND_API_KEY`, le altre `BUSINESS_*`, `NEXT_PUBLIC_PLAUSIBLE_DOMAIN`.
+- Dopo ogni modifica alle variabili serve un nuovo deploy (Deployments → ⋯ → Redeploy): vengono lette al build, non al volo.
+- Branch di produzione: su Vercel è `master`, il codice sta su `claude/amazing-thompson-wpeq5s` e il deploy di produzione è stato lanciato a mano da quel branch. Per i deploy automatici: Settings → Git → Production Branch = `claude/amazing-thompson-wpeq5s`, oppure merge su `master`.
+- Il piano Hobby vieta l'uso commerciale: passare a Pro prima di incassare.
+
 ## Giorno 0 — mettere in produzione (1 ora)
 
+- [x] Progetto Vercel creato, variabili non segrete impostate, primo deploy di produzione online (vedi sopra).
 - [ ] Dominio: `preventivolampo.it` (o `.com`) → Vercel. Verifica disponibilità e marchio prima di registrare.
 - [ ] Stripe live: chiave `sk_live_…` su Vercel (catalogo e portale già creati, vedi sopra), ricevute email attive (Settings → Emails).
 - [ ] Variabili `BUSINESS_*`, `SUPPORT_EMAIL`: compaiono in footer, privacy e termini (obbligatorie per vendere online in Italia).

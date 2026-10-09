@@ -12,3 +12,4 @@
 - Sharing ("Invia al cliente") is the only server-side state: `src/lib/store.ts` (Upstash REST or in-memory with `SHARE_STORE=memory`) + `src/lib/share.ts`. Public page `/p/[id]`, APIs under `/api/share`. Hidden when no store is configured.
 - `src/lib/professions.ts` holds the SEO pages' content and templates; sample quotes there must stay deterministic (fixed ids and timestamps) because `/preventivo/[slug]` is prerendered.
 - Comparison table and pricing copy in `dict.ts` cite competitor list prices checked in October 2026 (see `docs/COMPETITORS.md`); update both when prices change.
+- Production runs on Vercel (team `alifaticos-projects`, project `preventivo-lampo`, https://preventivo-lampo-amber.vercel.app, functions in `fra1`); Stripe live catalog ids, env vars already set and what is still missing are listed in `docs/LAUNCH.md`.
