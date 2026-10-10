@@ -35,7 +35,7 @@ Team `alifaticos-projects` (piano Hobby), progetto `preventivo-lampo` (`prj_lj7t
 - Variabili già impostate: `LICENSE_SECRET` (production + preview, sensibile), `STRIPE_PRICE_SINGLE`, `STRIPE_PRICE_PRO_MONTHLY`, `STRIPE_PRICE_PRO_YEARLY`, `STRIPE_PORTAL_CONFIGURATION`, `BUSINESS_NAME`, `SUPPORT_EMAIL` (production).
 - Mancano e le può aggiungere solo il titolare da Settings → Environment Variables: `STRIPE_SECRET_KEY` (senza, `/api/config` risponde `payments: false` e si scarica solo il PDF con filigrana), `ANTHROPIC_API_KEY`, Upstash Redis dal marketplace (abilita "Invia al cliente"), `RESEND_API_KEY`, `APIFY_TOKEN` o `OPENAPI_COMPANY_TOKEN` (abilitano la ricerca del cliente nel Registro Imprese, vedi la checklist), le altre `BUSINESS_*`, `NEXT_PUBLIC_PLAUSIBLE_DOMAIN`.
 - Dopo ogni modifica alle variabili serve un nuovo deploy (Deployments → ⋯ → Redeploy): vengono lette al build, non al volo.
-- Branch di produzione: su Vercel è `master`, il codice sta su `claude/amazing-thompson-wpeq5s` e il deploy di produzione è stato lanciato a mano da quel branch. Per i deploy automatici: Settings → Git → Production Branch = `claude/amazing-thompson-wpeq5s`, oppure merge su `master`.
+- Branch di produzione: `master` (dal 10 ottobre 2026 allineato al branch di lavoro con merge fast-forward). Ogni push su `master` fa partire il deploy di produzione automatico di Vercel; i branch di lavoro producono deploy di anteprima.
 - Il piano Hobby vieta l'uso commerciale: passare a Pro prima di incassare.
 
 ## Nome: da cambiare prima del lancio
