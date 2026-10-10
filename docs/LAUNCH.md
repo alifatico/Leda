@@ -59,6 +59,10 @@ Decisione: tutta la personalizzazione del documento è nel piano gratuito; si pa
 - Modelli salvati dall'utente nel browser (`templatesStore`), riutilizzabili da "I miei preventivi".
 - Prossimo passo coerente: pagine SEO "modello preventivo <stile>" e la copertina come gancio per agenzie e consulenti (proposte).
 
+## Ricerca clienti nel Registro Imprese (10 ottobre 2026)
+
+Lo scraper Apify è troppo lento per un campo di ricerca (ogni ricerca è un run di decine di secondi) e non viene più scelto da solo. Oggi, senza token, la ricerca è istantanea ma solo per Partita IVA, tramite il registro IVA europeo (VIES, gratuito): copre le imprese iscritte all'archivio per le operazioni UE, non tutte. Per la ricerca istantanea per nome serve un token openapi.com (prodotto "Company", borsellino prepagato, circa 0,001 € per suggerimento e 0,015 € per scheda completa secondo il listino visto a ottobre 2026, da verificare): mettere `OPENAPI_COMPANY_TOKEN` su Vercel e rifare il deploy; il provider si attiva da solo.
+
 ## Giorno 0 — mettere in produzione (1 ora)
 
 - [x] Progetto Vercel creato, variabili non segrete impostate, primo deploy di produzione online (vedi sopra).

@@ -202,6 +202,7 @@ export const it = {
     clientHint: "I clienti già usati si compilano da soli.",
     clientHintLookup: "Scrivi la ragione sociale: la cerchiamo nel Registro Imprese.",
     clientHintSearch: "Scrivi la ragione sociale e premi \"Cerca nel Registro Imprese\".",
+    clientHintVat: "Scrivi la Partita IVA: ragione sociale e indirizzo si compilano da soli dal registro IVA europeo.",
     clientBook: {
       title: "Clienti già usati",
       forget: "Dimentica questo cliente",
@@ -213,6 +214,13 @@ export const it = {
       noResults: "Nessuna impresa trovata con questo nome. Puoi anche scrivere la Partita IVA (11 cifre).",
       unavailable: "Ricerca nel Registro Imprese non disponibile al momento.",
       filling: "Recupero i dati…",
+      vatSearching: "Cerco la Partita IVA nel registro IVA europeo…",
+      vatFilled: "Dati compilati dal registro IVA europeo (VIES): {name}.",
+      vatFound: "Trovato: {name}.",
+      vatUse: "Usa questi dati",
+      vatNotFound: "Partita IVA non trovata nel VIES: l'impresa non è iscritta all'archivio per le operazioni UE. Compila i dati a mano.",
+      vatUnavailable: "Verifica della Partita IVA non disponibile al momento.",
+      vatNoResults: "Partita IVA non trovata nel registro IVA europeo (VIES).",
     },
     previewEdit: "Modifica modello e stile",
     f: {
@@ -679,6 +687,7 @@ export const en: Shape<typeof it> = {
     clientHint: "Clients you already used fill in by themselves.",
     clientHintLookup: "Type the company name: we look it up in the Italian business register.",
     clientHintSearch: "Type the company name and press \"Search the business register\".",
+    clientHintVat: "Type the VAT number: company name and address fill in from the EU VAT register.",
     clientBook: {
       title: "Clients you already used",
       forget: "Forget this client",
@@ -690,6 +699,13 @@ export const en: Shape<typeof it> = {
       noResults: "No company found with this name. You can also type the VAT number (11 digits).",
       unavailable: "Business register lookup is unavailable right now.",
       filling: "Fetching details…",
+      vatSearching: "Looking the VAT number up in the EU VAT register…",
+      vatFilled: "Filled in from the EU VAT register (VIES): {name}.",
+      vatFound: "Found: {name}.",
+      vatUse: "Use these details",
+      vatNotFound: "VAT number not in VIES: the company is not enrolled for intra-EU trade. Fill the details in by hand.",
+      vatUnavailable: "VAT number check unavailable right now.",
+      vatNoResults: "VAT number not found in the EU VAT register (VIES).",
     },
     previewEdit: "Edit template and style",
     f: {

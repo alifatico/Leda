@@ -66,9 +66,10 @@ export const aiEnv = {
   enabled: () => Boolean(first(process.env.ANTHROPIC_API_KEY)) && process.env.AI_DRAFT_DISABLED !== "1",
 };
 
-export type CompanyProvider = "openapi" | "apify" | "mock";
+export type CompanyProvider = "openapi" | "apify" | "vies" | "mock";
 /** autocomplete: results while typing (real-time API); on-demand: a "search" button, results after a run of some seconds */
-export type CompanyLookupMode = "off" | "autocomplete" | "on-demand";
+/** autocomplete: names while typing; on-demand: a button per search; vat: VAT numbers only (VIES) */
+export type CompanyLookupMode = "off" | "autocomplete" | "on-demand" | "vat";
 
 /**
  * Client lookup in the Italian business register. Two providers: openapi.com
@@ -81,15 +82,18 @@ export const companyEnv = {
     const chosen = process.env.COMPANY_LOOKUP;
     if (chosen === "off") return null;
     if (chosen === "mock") return "mock";
+    if (chosen === "vies") return "vies";
     if (chosen === "apify") return first(process.env.APIFY_TOKEN) ? "apify" : null;
     if (chosen === "openapi") return first(process.env.OPENAPI_COMPANY_TOKEN) ? "openapi" : null;
     if (first(process.env.OPENAPI_COMPANY_TOKEN)) return "openapi";
-    if (first(process.env.APIFY_TOKEN)) return "apify";
-    return null;
+    // Apify is never picked on its own: a run takes tens of seconds. The free EU
+    // VAT register (VIES) answers in under a second and needs no token.
+    return "vies";
   },
   mode(): CompanyLookupMode {
     const p = companyEnv.provider();
     if (!p) return "off";
+    if (p === "vies") return "vat";
     const forced = process.env.COMPANY_LOOKUP_MODE;
     if (forced === "autocomplete" || forced === "on-demand") return forced;
     return p === "apify" ? "on-demand" : "autocomplete";

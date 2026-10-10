@@ -428,7 +428,7 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
             right={
               // hidden on phones: the field's own caption and button say the same thing, and this line would crowd the title
               <span className="hidden text-xs text-slate-400 sm:inline">
-                {t(config.companyLookup === "on-demand" ? "b.clientHintSearch" : config.companyLookup === "autocomplete" ? "b.clientHintLookup" : "b.clientHint")}
+                {t(config.companyLookup === "on-demand" ? "b.clientHintSearch" : config.companyLookup === "autocomplete" ? "b.clientHintLookup" : config.companyLookup === "vat" ? "b.clientHintVat" : "b.clientHint")}
               </span>
             }
           >

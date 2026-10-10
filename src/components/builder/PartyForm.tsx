@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { api } from "@/lib/client-api";
-import { clientSummary, findClient, hasDetails, searchClients } from "@/lib/clients";
+import { api, ApiError } from "@/lib/client-api";
+import { clientSummary, findClient, hasDetails, normalizeName, searchClients } from "@/lib/clients";
 import type { CompanyHit } from "@/lib/company";
 import type { CompanyLookupMode } from "@/lib/env";
 import { useLocale } from "@/lib/i18n/context";
 import type { Party } from "@/lib/quote";
+import { vatDigits } from "@/lib/vat";
 import { Button, Field, Icon, Input, Spinner, cx } from "../ui";
 
 export function PartyForm({
@@ -23,7 +24,7 @@ export function PartyForm({
   /** Address book: when given, the name field suggests known clients and fills the whole card. */
   book?: Party[];
   onForget?: (name: string) => void;
-  /** Business-register search: while typing ("autocomplete") or behind a button ("on-demand"). */
+  /** Business-register search: while typing ("autocomplete"), behind a button ("on-demand") or by VAT number only ("vat"). */
   lookup?: CompanyLookupMode;
 }) {
   const { t } = useLocale();
@@ -37,9 +38,13 @@ export function PartyForm({
           <Input value={party.name} onChange={set("name")} autoComplete="organization" />
         </Field>
       )}
-      <Field label={t("b.f.vat")} className="sm:col-span-3">
-        <Input value={party.vat ?? ""} onChange={set("vat")} placeholder="IT01234567890" />
-      </Field>
+      {book && lookup && lookup !== "off" ? (
+        <VatLookupField party={party} onChange={onChange} />
+      ) : (
+        <Field label={t("b.f.vat")} className="sm:col-span-3">
+          <Input value={party.vat ?? ""} onChange={set("vat")} placeholder="IT01234567890" />
+        </Field>
+      )}
       <Field label={t("b.f.taxCode")} className="sm:col-span-3">
         <Input value={party.taxCode ?? ""} onChange={set("taxCode")} />
       </Field>
@@ -140,6 +145,8 @@ function ClientNameField({
   const listId = useId();
   const live = lookup === "autocomplete";
   const onDemand = lookup === "on-demand";
+  // VIES knows VAT numbers only: the register is searched when the text is one
+  const vatOnly = lookup === "vat";
   const inputRef = useRef<HTMLInputElement>(null);
   const [focused, setFocused] = useState(false);
   // closed with Escape or right after a pick, until the text changes again
@@ -175,7 +182,7 @@ function ClientNameField({
   }, []);
 
   // autocomplete: search a moment after the user stops typing, cancel when the text changes
-  const wantRemote = live && showList && typed && q.length >= MIN_LOOKUP_CHARS;
+  const wantRemote = showList && typed && q.length >= MIN_LOOKUP_CHARS && (live || (vatOnly && vatDigits(q) !== null));
   useEffect(() => {
     if (!wantRemote) return;
     const started: { ctrl: AbortController | null } = { ctrl: null };
@@ -202,7 +209,7 @@ function ClientNameField({
   const noResults = !searching && remoteState === "done" && remoteHits.length === 0 && (onDemand || wantRemote);
   const options: Option[] = [...local.map((p) => ({ kind: "local" as const, party: p })), ...remoteHits.map((hit) => ({ kind: "remote" as const, hit }))];
   // on-demand mode reports errors and empty answers under the button, where they stay visible without focus
-  const registryBlock = remoteHits.length > 0 || searching || (live && (remoteState === "error" || noResults));
+  const registryBlock = remoteHits.length > 0 || searching || ((live || vatOnly) && (remoteState === "error" || noResults));
   const open = showList && (options.length > 0 || registryBlock);
   const activeIdx = Math.min(active, Math.max(options.length - 1, 0));
 
@@ -424,13 +431,107 @@ function ClientNameField({
             <li className="flex items-center gap-2 px-3 py-2 text-xs text-slate-500">
               <Spinner className="h-3.5 w-3.5" /> {t(onDemand ? "b.clientBook.searchingSlow" : "b.clientBook.searching")}
             </li>
-          ) : live && remoteState === "error" ? (
+          ) : (live || vatOnly) && remoteState === "error" ? (
             <li className="px-3 py-2 text-xs text-amber-700">{t("b.clientBook.unavailable")}</li>
-          ) : live && noResults ? (
-            <li className="px-3 py-2 text-xs text-slate-500">{t("b.clientBook.noResults")}</li>
+          ) : (live || vatOnly) && noResults ? (
+            <li className="px-3 py-2 text-xs text-slate-500">{t(vatOnly ? "b.clientBook.vatNoResults" : "b.clientBook.noResults")}</li>
           ) : null}
         </ul>
       ) : null}
     </div>
+  );
+}
+
+type VatLookup = { vat: string; status: "idle" | "loading" | "found" | "applied" | "notfound" | "error"; found?: Party };
+
+/** Fill the empty fields of the card with what the register knows; the VAT number is always the register's. */
+function mergeCard(current: Party, found: Party): Party {
+  const out: Record<string, string | undefined> = { ...current };
+  for (const [k, v] of Object.entries(found)) {
+    if (v && !(out[k] ?? "").trim()) out[k] = v;
+  }
+  out.vat = found.vat ?? out.vat;
+  return out as Party;
+}
+
+/**
+ * VAT-number field of the client. Eleven digits typed or pasted (with or
+ * without "IT") fetch the company from the register and fill the empty fields;
+ * when a different name is already there, the find is offered with a button.
+ */
+function VatLookupField({ party, onChange }: { party: Party; onChange: (p: Party) => void }) {
+  const { t } = useLocale();
+  const [typed, setTyped] = useState(false);
+  const [state, setState] = useState<VatLookup>({ vat: "", status: "idle" });
+  const ctrlRef = useRef<AbortController | null>(null);
+  const partyRef = useRef(party);
+  const onChangeRef = useRef(onChange);
+  useEffect(() => {
+    partyRef.current = party;
+    onChangeRef.current = onChange;
+  });
+  const vat = vatDigits(party.vat ?? "");
+
+  useEffect(() => {
+    if (!typed || !vat || vat === state.vat) return;
+    const timer = setTimeout(() => {
+      ctrlRef.current?.abort();
+      const ctrl = new AbortController();
+      ctrlRef.current = ctrl;
+      setState({ vat, status: "loading" });
+      api.company.get(vat, ctrl.signal).then(
+        (res) => {
+          if (ctrl.signal.aborted) return;
+          const current = partyRef.current;
+          const conflict = current.name.trim() !== "" && normalizeName(current.name) !== normalizeName(res.party.name);
+          if (conflict) {
+            setState({ vat, status: "found", found: res.party });
+          } else {
+            onChangeRef.current(mergeCard(current, res.party));
+            setState({ vat, status: "applied", found: res.party });
+          }
+        },
+        (e) => {
+          if (ctrl.signal.aborted) return;
+          setState({ vat, status: e instanceof ApiError && e.status === 404 ? "notfound" : "error" });
+        },
+      );
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [typed, vat, state.vat]);
+  useEffect(() => () => ctrlRef.current?.abort(), []);
+
+  const show = vat !== null && state.vat === vat ? state.status : "idle";
+  const found = state.found;
+  return (
+    <Field label={t("b.f.vat")} className="sm:col-span-3">
+      <Input
+        value={party.vat ?? ""}
+        onChange={(e) => {
+          onChange({ ...party, vat: e.target.value });
+          setTyped(true);
+        }}
+        placeholder="IT01234567890"
+        autoComplete="off"
+      />
+      {show === "loading" ? (
+        <span className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
+          <Spinner className="h-3 w-3" /> {t("b.clientBook.vatSearching")}
+        </span>
+      ) : show === "applied" && found ? (
+        <span className="mt-1 block text-xs text-emerald-700">{t("b.clientBook.vatFilled", { name: found.name })}</span>
+      ) : show === "found" && found ? (
+        <span className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+          {t("b.clientBook.vatFound", { name: found.name })}
+          <Button type="button" variant="secondary" size="sm" onClick={() => { onChange({ ...party, ...found }); setState({ vat: state.vat, status: "applied", found }); }}>
+            {t("b.clientBook.vatUse")}
+          </Button>
+        </span>
+      ) : show === "notfound" ? (
+        <span className="mt-1 block text-xs text-amber-700">{t("b.clientBook.vatNotFound")}</span>
+      ) : show === "error" ? (
+        <span className="mt-1 block text-xs text-amber-700">{t("b.clientBook.vatUnavailable")}</span>
+      ) : null}
+    </Field>
   );
 }

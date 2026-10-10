@@ -1,19 +1,23 @@
 /**
  * Client lookup in the Italian business register (Registro Imprese). Server-only.
  *
- * Two providers behind one interface (see `companyEnv` in env.ts):
+ * Three providers behind one interface (see `companyEnv` in env.ts):
+ * - VIES (default, free, no token): the EU VAT register answers a VAT number
+ *   in under a second with name and registered office. Only companies enrolled
+ *   for intra-EU trade are listed, and names cannot be searched.
  * - openapi.com: real-time API. Autocomplete while typing (IT-search with the
  *   "name" enrichment, ~€0.001 a call) and one "start" call for the full card
  *   when a company is picked (~€0.015).
- * - Apify actor: a scraper that runs for some seconds. The search starts a run
- *   and returns its id; the browser polls `pollRun()` until the records are
- *   in. Each record is paid, so every hit already carries the full card.
+ * - Apify actor (only when COMPANY_LOOKUP=apify): a scraper that runs for tens
+ *   of seconds. The search starts a run and returns its id; the browser polls
+ *   `pollRun()` until the records are in. Every hit already carries the card.
  * Results are cached in memory and the paid calls are capped per day
  * (COMPANY_LOOKUP_DAILY_LIMIT). `COMPANY_LOOKUP=mock` serves canned companies.
  */
 import { companyEnv } from "./env";
 import type { Party } from "./quote";
 import { rateLimit } from "./ratelimit";
+import { vatDigits } from "./vat";
 
 export type CompanyHit = {
   id: string;
@@ -322,6 +326,55 @@ async function apifyPoll(runId: string): Promise<LookupResult<RunOutcome>> {
   return { ok: true, data: { running: true } };
 }
 
+// ---------------------------------------------------------------- VIES (EU VAT register)
+const VIES_URL = "https://ec.europa.eu/taxation_customs/vies/rest-api/check-vat-number";
+
+export type ViesBody = {
+  valid?: boolean;
+  name?: string | null;
+  address?: string | null;
+  userError?: string | null;
+  actionSucceed?: boolean;
+  errorWrappers?: { error?: string; message?: string }[];
+};
+
+/** "VIA GIORGIONE 106 \n00147 ROMA RM\n" plus the name → client card; null when VIES does not know the number. */
+export function viesToParty(vat: string, body: ViesBody): Party | null {
+  if (body.valid !== true) return null;
+  const name = clean(body.name);
+  if (!name || name === "---") return null;
+  const p: Party = { name, vat };
+  const address = clean(String(body.address ?? "").replace(/\n/g, " "));
+  if (address && address !== "---") Object.assign(p, parseItalianAddress(address));
+  p.country = "Italia";
+  return p;
+}
+
+async function viesLookup(vat: string): Promise<LookupResult<Party | null>> {
+  if (!withinDailyCap()) return { ok: false, reason: "quota" };
+  let res: Response;
+  try {
+    res = await fetch(VIES_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ countryCode: "IT", vatNumber: vat }),
+      signal: AbortSignal.timeout(8000),
+      cache: "no-store",
+    });
+  } catch (e) {
+    return { ok: false, reason: "upstream", message: e instanceof Error ? e.message : String(e) };
+  }
+  let body: ViesBody = {};
+  try {
+    body = (await res.json()) as ViesBody;
+  } catch {
+    /* non-JSON error page */
+  }
+  if (!res.ok) return failureFor(res.status, body.userError ?? body.errorWrappers?.[0]?.error);
+  if (typeof body.valid !== "boolean") return { ok: false, reason: "upstream", message: body.userError ?? body.errorWrappers?.[0]?.error ?? "vies: no answer" };
+  return { ok: true, data: viesToParty(vat, body) };
+}
+
 // ---------------------------------------------------------------- mock provider
 const MOCK: RawCompany[] = [
   { id: "mock-1", companyName: "TRATTORIA DA GINO S.R.L.", vatCode: "01234567890", taxCode: "01234567890", sdiCode: "M5UXCR1", address: { registeredOffice: { streetName: "VIA ROMA 12", town: "MILANO", province: "MI", zipCode: "20121" } } },
@@ -377,6 +430,14 @@ export async function searchCompanies(input: string): Promise<LookupResult<Searc
     return { ok: true, data: { hits: mockSearch(q) } };
   }
 
+  if (provider === "vies") {
+    const vat = vatDigits(q);
+    if (!vat) return { ok: true, data: { hits: [] } };
+    const r = await getCompany(vat);
+    if (!r.ok) return r;
+    return { ok: true, data: { hits: r.data ? [hitFromParty(r.data, vat)] : [] } };
+  }
+
   if (provider === "apify") {
     const done = recall<CompanyHit[]>(key, 24 * 60 * MIN);
     if (done) return { ok: true, data: { hits: done } };
@@ -388,10 +449,11 @@ export async function searchCompanies(input: string): Promise<LookupResult<Searc
     return { ok: true, data: { runId: started.data } };
   }
 
-  if (isVatNumber(q)) {
-    const r = await getCompany(q);
+  const vat = vatDigits(q);
+  if (vat) {
+    const r = await getCompany(vat);
     if (!r.ok) return r;
-    return { ok: true, data: { hits: r.data ? [hitFromParty(r.data, q)] : [] } };
+    return { ok: true, data: { hits: r.data ? [hitFromParty(r.data, vat)] : [] } };
   }
   return cached(key, 10 * MIN, async () => {
     const r = await callOpenapi(`/IT-search?autocomplete=${encodeURIComponent(q)}&dataEnrichment=name&limit=8`);
@@ -432,6 +494,11 @@ export async function getCompany(idOrVat: string): Promise<LookupResult<Party | 
   if (known) return { ok: true, data: known };
   // the Apify provider only knows the cards its searches brought in
   if (provider === "apify") return { ok: true, data: null };
+  if (provider === "vies") {
+    const vat = vatDigits(key);
+    if (!vat) return { ok: true, data: null };
+    return cached(`c:${vat}`, 24 * 60 * MIN, () => viesLookup(vat));
+  }
   return cached(`c:${key}`, 60 * MIN, async () => {
     const r = await callOpenapi(`/IT-start/${encodeURIComponent(key)}`);
     if (!r.ok) return r;

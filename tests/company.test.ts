@@ -15,6 +15,7 @@ import {
   type RawCompany,
 } from "@/lib/company";
 import { companyEnv } from "@/lib/env";
+import { vatDigits } from "@/lib/vat";
 
 /** The example record of company.openapi.com's "start" dataset. */
 const SAMPLE: RawCompany = {
@@ -89,6 +90,13 @@ describe("business register lookup", () => {
     expect(toHit({ companyName: "NO ID" })).toBeNull();
   });
 
+  it("extracts the digits of an Italian VAT number", () => {
+    expect(vatDigits("IT 01234567890")).toBe("01234567890");
+    expect(vatDigits("it01234567890")).toBe("01234567890");
+    expect(vatDigits("0123456789")).toBeNull();
+    expect(vatDigits("RSSMRA80A01H501U")).toBeNull();
+  });
+
   it("normalises the query and recognises VAT numbers", () => {
     expect(normalizeQuery("  trattoria   da  gino ")).toBe("trattoria da gino");
     expect(normalizeQuery("x".repeat(100))).toHaveLength(80);
@@ -125,11 +133,16 @@ describe("business register lookup", () => {
   });
 
   it("picks the provider and the lookup mode from the environment", () => {
-    expect(companyEnv.provider()).toBeNull();
-    expect(companyEnv.mode()).toBe("off");
+    // no token: the free EU VAT register, by VAT number only
+    expect(companyEnv.provider()).toBe("vies");
+    expect(companyEnv.mode()).toBe("vat");
+    // an Apify token alone never turns the slow scraper on
     process.env.APIFY_TOKEN = "apify_api_x";
+    expect(companyEnv.provider()).toBe("vies");
+    process.env.COMPANY_LOOKUP = "apify";
     expect(companyEnv.provider()).toBe("apify");
     expect(companyEnv.mode()).toBe("on-demand");
+    delete process.env.COMPANY_LOOKUP;
     process.env.OPENAPI_COMPANY_TOKEN = "t";
     expect(companyEnv.provider()).toBe("openapi");
     expect(companyEnv.mode()).toBe("autocomplete");
@@ -183,8 +196,9 @@ describe("business register lookup", () => {
       process.env.OPENAPI_COMPANY_TOKEN = "test-token";
     });
 
-    it("is disabled without any token", async () => {
+    it("is off only when asked", async () => {
       resetEnv();
+      process.env.COMPANY_LOOKUP = "off";
       expect(await searchCompanies("trattoria")).toEqual({ ok: false, reason: "disabled" });
     });
 
@@ -221,8 +235,47 @@ describe("business register lookup", () => {
     });
   });
 
+  describe("VIES provider (default, free)", () => {
+    const VIES_OK = {
+      countryCode: "IT",
+      vatNumber: "06363391001",
+      requestDate: "2026-10-10T15:37:25.611Z",
+      valid: true,
+      requestIdentifier: "",
+      name: "AGENZIA DELLE ENTRATE",
+      address: "VIA GIORGIONE 106 \n00147 ROMA RM\n",
+      traderName: "---",
+    };
+
+    it("looks a VAT number up, with or without the IT prefix, and parses the registered office", async () => {
+      const fetchMock = vi.fn(async () => json(VIES_OK));
+      vi.stubGlobal("fetch", fetchMock);
+      const card = await getCompany("06363391001");
+      expect(card).toEqual({ ok: true, data: { name: "AGENZIA DELLE ENTRATE", vat: "06363391001", address: "Via Giorgione 106", zip: "00147", city: "Roma", province: "RM", country: "Italia" } });
+      const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+      expect(url).toBe("https://ec.europa.eu/taxation_customs/vies/rest-api/check-vat-number");
+      expect(JSON.parse(String(init.body))).toEqual({ countryCode: "IT", vatNumber: "06363391001" });
+      // the search answers VAT numbers with the full card and nothing for names; the card is cached
+      const r = await searchCompanies("IT 06363391001");
+      expect(r.ok && "hits" in r.data && r.data.hits[0]).toMatchObject({ id: "06363391001", name: "AGENZIA DELLE ENTRATE", city: "Roma", party: { zip: "00147" } });
+      expect(await searchCompanies("agenzia delle entrate")).toEqual({ ok: true, data: { hits: [] } });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("treats unknown numbers as not found and service errors as upstream failures", async () => {
+      vi.stubGlobal("fetch", vi.fn(async () => json({ ...VIES_OK, vatNumber: "00000000001", valid: false, name: "---", address: "---" })));
+      expect(await getCompany("00000000001")).toEqual({ ok: true, data: null });
+      vi.stubGlobal("fetch", vi.fn(async () => json({ actionSucceed: false, errorWrappers: [{ error: "MS_MAX_CONCURRENT_REQ" }] })));
+      expect(await getCompany("00000000002")).toEqual({ ok: false, reason: "upstream", message: "MS_MAX_CONCURRENT_REQ" });
+      vi.stubGlobal("fetch", vi.fn(async () => new Response("<html>down</html>", { status: 503 })));
+      expect(await getCompany("00000000003")).toMatchObject({ ok: false, reason: "upstream" });
+      expect(await getCompany("not-a-vat")).toEqual({ ok: true, data: null });
+    });
+  });
+
   describe("Apify provider", () => {
     beforeEach(() => {
+      process.env.COMPANY_LOOKUP = "apify";
       process.env.APIFY_TOKEN = "apify_api_test";
       process.env.APIFY_COMPANY_MAX_ITEMS = "5";
     });
