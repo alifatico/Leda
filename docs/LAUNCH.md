@@ -54,7 +54,7 @@ Team `alifaticos-projects` (piano Hobby), progetto `preventivo-lampo` (`prj_lj7t
 
 Decisione: tutta la personalizzazione del documento è nel piano gratuito; si paga solo il PDF senza filigrana (singolo o Pro). Motivo: FaiPreventivo include 36 modelli e 28 copertine dal piano Starter, Fatture in Cloud ha 10+ modelli in ogni piano, Zoho e Canva regalano la personalizzazione; farla pagare non differenzia, mentre un editor gratuito con il motore fiscale sotto è l'unica cosa che oggi nessuno offre in italiano.
 
-- Cinque stili (`src/lib/quote/styles.ts`): classico, moderno (banda), essenziale (solo linee), elegante (serif, titolo centrato), compatto.
+- Sei stili (`src/lib/quote/styles.ts`, rifatti il 12 ottobre 2026 con font incorporati e palette derivata dal colore del brand): classico (carta intestata), moderno (banda a tutta pagina con il totale), essenziale (bianco e nero), elegante (serif, testata centrata), compatto (condensato con striscia), studio (colonna laterale colorata). La hero della homepage li mostra tutti con cinque colori.
 - Modello modificabile (`quote.design`): colonne, etichette, testo introduttivo, testo finale, copertina con immagine, firma e validità.
 - Modelli salvati dall'utente nel browser (`templatesStore`), riutilizzabili da "I miei preventivi".
 - Prossimo passo coerente: pagine SEO "modello preventivo <stile>" e la copertina come gancio per agenzie e consulenti (proposte).
