@@ -234,15 +234,16 @@ describe("business register lookup", () => {
       expect(d).toContain("2027-01-15");
       expect(d).not.toContain("c2lnbmF0dXJl");
       expect(d).not.toContain("me");
-      expect(describeOpenapiToken("abc")).toBe("length 3, unexpected format");
+      expect(describeOpenapiToken("abc")).toBe("length 3, not the 24 hex characters of an openapi token");
+      expect(describeOpenapiToken("rsIZPMNBctT9OCFM5bQMs1D4uGC5gHp1")).toContain("32 alphanumeric characters: looks like the account APIKey");
       expect(describeOpenapiToken("a.b.c")).toBe("length 5, jwt, payload unreadable");
       expect(describeOpenapiToken("656d1e2f8b3c2a001f7e4a12")).toBe("length 24, 24 hex characters: the format of an openapi token");
-      expect(describeOpenapiToken("0123456789abcdef0123456789abcdef")).toContain("32 hex characters: looks like the account APIKey");
+      expect(describeOpenapiToken("0123456789abcdef0123456789abcdef")).toContain("looks like the account APIKey");
       process.env.OPENAPI_COMPANY_TOKEN = jwt;
       vi.stubGlobal("fetch", vi.fn(async () => json({ success: false, message: "Wrong Token", error: 125.22, data: null }, 401)));
       const r = await getCompany("99999999993");
       expect(r).toMatchObject({ ok: false, reason: "auth" });
-      expect((r as { message: string }).message).toBe(`Wrong Token (https://company.openapi.com/IT-start); token: ${d}`);
+      expect((r as { message: string }).message).toBe(`Wrong Token (https://company.openapi.com/IT-start); token: ${d}; VIES fallback: auth`);
     });
 
     it("falls back to the free EU register for VAT numbers when openapi rejects the call", async () => {
@@ -265,11 +266,13 @@ describe("business register lookup", () => {
       vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 204 })));
       expect(await searchCompanies("nessuno qui")).toEqual({ ok: true, data: { hits: [] } });
       vi.stubGlobal("fetch", vi.fn(async () => json({ success: false, message: "Insufficient Credit", error: 610, data: null }, 402)));
-      expect(await getCompany("99999999990")).toEqual({ ok: false, reason: "credit", message: "Insufficient Credit (https://company.openapi.com/IT-start)" });
+      const credit = await getCompany("99999999990");
+      expect(credit).toMatchObject({ ok: false, reason: "credit" });
+      expect((credit as { message: string }).message).toBe("Insufficient Credit (https://company.openapi.com/IT-start); VIES fallback: credit");
       vi.stubGlobal("fetch", vi.fn(async () => json({ success: false, message: "unauthorized" }, 401)));
       expect(await getCompany("99999999991")).toMatchObject({ ok: false, reason: "auth" });
       vi.stubGlobal("fetch", vi.fn(async () => Promise.reject(new Error("network down"))));
-      expect(await getCompany("99999999992")).toEqual({ ok: false, reason: "upstream", message: "network down" });
+      expect(await getCompany("99999999992")).toEqual({ ok: false, reason: "upstream", message: "network down; VIES fallback: upstream network down" });
     });
   });
 

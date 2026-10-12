@@ -250,9 +250,9 @@ const openapiBase = () => (companyEnv.openapi.sandbox() ? "https://test.company.
 export function describeOpenapiToken(token: string): string {
   const base = `length ${token.length}`;
   if (/^[0-9a-f]{24}$/i.test(token)) return `${base}, 24 hex characters: the format of an openapi token`;
-  if (/^[0-9a-f]{32}$/i.test(token)) return `${base}, 32 hex characters: looks like the account APIKey, which is not a token`;
+  if (/^[A-Za-z0-9]{32}$/.test(token)) return `${base}, 32 alphanumeric characters: looks like the account APIKey, which is not a token`;
   const parts = token.split(".");
-  if (parts.length !== 3) return `${base}, unexpected format`;
+  if (parts.length !== 3) return `${base}, not the 24 hex characters of an openapi token`;
   try {
     const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8")) as Record<string, unknown>;
     const scopes = Array.isArray(payload.scopes) ? payload.scopes : Array.isArray(payload.scope) ? payload.scope : null;
@@ -535,6 +535,8 @@ export async function getCompany(idOrVat: string): Promise<LookupResult<Party | 
     const vat = r.reason === "disabled" ? null : vatDigits(key);
     if (!vat) return r;
     const free = await viesLookup(vat);
-    return free.ok && free.data ? free : r;
+    if (free.ok && free.data) return free;
+    const why = free.ok ? "not in VIES" : `${free.reason} ${free.message ?? ""}`.trim();
+    return { ...r, message: `${r.message ?? r.reason}; VIES fallback: ${why}` };
   });
 }
