@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  describeOpenapiToken,
   apifyToHit,
   apifyToParty,
   getCompany,
@@ -221,6 +222,25 @@ describe("business register lookup", () => {
       const r = await searchCompanies("12485671007");
       expect(r.ok && "hits" in r.data && r.data.hits[0].party?.address).toBe("Viale F Tommaso Marinetti 221");
       expect(String((fetchMock.mock.calls[0] as unknown[])[0])).toBe("https://company.openapi.com/IT-start/12485671007");
+    });
+
+    it("describes a rejected token without revealing it", async () => {
+      const payload = Buffer.from(JSON.stringify({ sub: "me", scopes: ["GET test.company.openapi.com/IT-search"], exp: 1800000000 })).toString("base64url");
+      const jwt = `eyJhbGciOiJIUzI1NiJ9.${payload}.c2lnbmF0dXJl`;
+      const d = describeOpenapiToken(jwt);
+      expect(d).toContain(`length ${jwt.length}, jwt`);
+      expect(d).toContain("keys sub,scopes,exp");
+      expect(d).toContain('["GET test.company.openapi.com/IT-search"]');
+      expect(d).toContain("2027-01-15");
+      expect(d).not.toContain("c2lnbmF0dXJl");
+      expect(d).not.toContain("me");
+      expect(describeOpenapiToken("abc")).toBe("length 3, not a jwt");
+      expect(describeOpenapiToken("a.b.c")).toBe("length 5, jwt, payload unreadable");
+      process.env.OPENAPI_COMPANY_TOKEN = jwt;
+      vi.stubGlobal("fetch", vi.fn(async () => json({ success: false, message: "Wrong Token", error: 125.22, data: null }, 401)));
+      const r = await getCompany("99999999993");
+      expect(r).toMatchObject({ ok: false, reason: "auth" });
+      expect((r as { message: string }).message).toBe(`Wrong Token (https://company.openapi.com/IT-start); token: ${d}`);
     });
 
     it("treats 204 as no results and maps provider failures", async () => {

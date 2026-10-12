@@ -242,6 +242,27 @@ function failureFor(status: number, message?: string): LookupResult<never> {
 
 const openapiBase = () => (companyEnv.openapi.sandbox() ? "https://test.company.openapi.com" : "https://company.openapi.com");
 
+/**
+ * What a rejected openapi token looks like, for the server log only and without the token itself:
+ * its length, whether it is a JWT and, if so, the payload keys, the scopes and the expiry.
+ * openapi tokens carry their scopes ("GET test.company.openapi.com/IT-search"), so this tells a
+ * production token used in the sandbox, or a token without the endpoint's scope, from a bad paste.
+ */
+export function describeOpenapiToken(token: string): string {
+  const parts = token.split(".");
+  const base = `length ${token.length}, ${parts.length === 3 ? "jwt" : "not a jwt"}`;
+  if (parts.length !== 3) return base;
+  try {
+    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8")) as Record<string, unknown>;
+    const scopes = Array.isArray(payload.scopes) ? payload.scopes : Array.isArray(payload.scope) ? payload.scope : null;
+    const expRaw = payload.exp ?? payload.expire;
+    const exp = typeof expRaw === "number" ? new Date((expRaw > 1e12 ? expRaw : expRaw * 1000)).toISOString() : expRaw;
+    return `${base}, keys ${Object.keys(payload).join(",")}, scopes ${scopes ? JSON.stringify(scopes.slice(0, 12)) : "n/a"}, expires ${String(exp ?? "n/a")}`;
+  } catch {
+    return `${base}, payload unreadable`;
+  }
+}
+
 async function callOpenapi(path: string): Promise<LookupResult<RawCompany[]>> {
   const token = companyEnv.openapi.token();
   if (!token) return { ok: false, reason: "disabled" };
@@ -266,7 +287,8 @@ async function callOpenapi(path: string): Promise<LookupResult<RawCompany[]>> {
   if (!res.ok || body.success === false) {
     // the host tells a test token sent to production (or the reverse) apart from a bad token
     const endpoint = path.split("?")[0].split("/")[1] ?? "";
-    return failureFor(res.status, `${body.message ?? `HTTP ${res.status}`} (${openapiBase()}/${endpoint})`);
+    const rejected = res.status === 401 || res.status === 403 ? `; token: ${describeOpenapiToken(token)}` : "";
+    return failureFor(res.status, `${body.message ?? `HTTP ${res.status}`} (${openapiBase()}/${endpoint})${rejected}`);
   }
   const data = Array.isArray(body.data) ? body.data : body.data ? [body.data] : [];
   return { ok: true, data: data as RawCompany[] };
