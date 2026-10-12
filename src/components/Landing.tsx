@@ -7,8 +7,7 @@ import { track } from "@/lib/analytics";
 import { api, formatPrice } from "@/lib/client-api";
 import type { PlanId, PublicConfig } from "@/lib/env";
 import { useLocale } from "@/lib/i18n/context";
-import { sampleQuote } from "@/lib/quote";
-import { QuotePreview } from "./QuotePreview";
+import { HeroShowcase } from "./HeroShowcase";
 import { SiteFooter, SiteHeader } from "./SiteChrome";
 import { Button, Icon, cx } from "./ui";
 
@@ -68,13 +67,7 @@ export function Landing({ config, businessName }: { config: PublicConfig; busine
               ))}
             </ul>
           </div>
-          <div className="relative mx-auto w-full max-w-[560px]">
-            <div className="absolute -inset-4 -z-10 rounded-3xl bg-gradient-to-br from-indigo-200/60 via-amber-100/40 to-transparent blur-2xl" />
-            <div className="relative max-h-[560px] overflow-hidden rounded-xl shadow-2xl ring-1 ring-slate-200">
-              <QuotePreview quote={sampleQuote(locale)} />
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent" />
-            </div>
-          </div>
+          <HeroShowcase />
         </div>
       </section>
 

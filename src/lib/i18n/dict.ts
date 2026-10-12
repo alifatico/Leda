@@ -16,6 +16,10 @@ export const it = {
     cta: "Crea il tuo preventivo gratis",
     ctaSecondary: "Guarda un esempio (PDF)",
     note: "Gratis per sempre con filigrana. Il PDF pulito costa {single} oppure illimitati con Pro.",
+    showcaseHint: "Clicca uno stile o un colore: nell'editor sono tutti gratis.",
+    pickStyle: "Stile del documento",
+    pickColor: "Colore del brand",
+    colors: { navy: "Blu navy", teal: "Verde petrolio", terracotta: "Terracotta", plum: "Prugna", ink: "Nero" },
   },
   trust: {
     one: "Zero registrazione",
@@ -529,6 +533,10 @@ export const en: Shape<typeof it> = {
     cta: "Create your quote for free",
     ctaSecondary: "See an example (PDF)",
     note: "Free forever with a watermark. A clean PDF costs {single}, or go unlimited with Pro.",
+    showcaseHint: "Click a style or a colour: in the editor they are all free.",
+    pickStyle: "Document style",
+    pickColor: "Brand colour",
+    colors: { navy: "Navy blue", teal: "Teal", terracotta: "Terracotta", plum: "Plum", ink: "Black" },
   },
   trust: { one: "Zero sign-up", two: "Italian tax rules built in", three: "AI draft", four: "Italian and English" },
   how: {
