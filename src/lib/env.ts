@@ -113,7 +113,7 @@ export const companyEnv = {
     timeoutSecs: () => Math.min(intEnv("APIFY_COMPANY_TIMEOUT", 120), 300),
   },
   /** Hard cap of paid upstream calls per day across all users (cost control) */
-  dailyLimit: () => intEnv("COMPANY_LOOKUP_DAILY_LIMIT", companyEnv.provider() === "apify" ? 300 : 2000),
+  dailyLimit: () => intEnv("COMPANY_LOOKUP_DAILY_LIMIT", companyEnv.provider() === "apify" ? 300 : companyEnv.provider() === "openapi" ? 400 : 2000),
 };
 
 export const emailEnv = {
