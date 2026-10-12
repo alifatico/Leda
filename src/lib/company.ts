@@ -263,7 +263,11 @@ async function callOpenapi(path: string): Promise<LookupResult<RawCompany[]>> {
   } catch {
     /* non-JSON error page */
   }
-  if (!res.ok || body.success === false) return failureFor(res.status, body.message);
+  if (!res.ok || body.success === false) {
+    // the host tells a test token sent to production (or the reverse) apart from a bad token
+    const endpoint = path.split("?")[0].split("/")[1] ?? "";
+    return failureFor(res.status, `${body.message ?? `HTTP ${res.status}`} (${openapiBase()}/${endpoint})`);
+  }
   const data = Array.isArray(body.data) ? body.data : body.data ? [body.data] : [];
   return { ok: true, data: data as RawCompany[] };
 }

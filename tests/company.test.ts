@@ -227,7 +227,7 @@ describe("business register lookup", () => {
       vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 204 })));
       expect(await searchCompanies("nessuno qui")).toEqual({ ok: true, data: { hits: [] } });
       vi.stubGlobal("fetch", vi.fn(async () => json({ success: false, message: "Insufficient Credit", error: 610, data: null }, 402)));
-      expect(await getCompany("99999999990")).toEqual({ ok: false, reason: "credit", message: "Insufficient Credit" });
+      expect(await getCompany("99999999990")).toEqual({ ok: false, reason: "credit", message: "Insufficient Credit (https://company.openapi.com/IT-start)" });
       vi.stubGlobal("fetch", vi.fn(async () => json({ success: false, message: "unauthorized" }, 401)));
       expect(await getCompany("99999999991")).toMatchObject({ ok: false, reason: "auth" });
       vi.stubGlobal("fetch", vi.fn(async () => Promise.reject(new Error("network down"))));
