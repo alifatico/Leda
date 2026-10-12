@@ -234,13 +234,31 @@ describe("business register lookup", () => {
       expect(d).toContain("2027-01-15");
       expect(d).not.toContain("c2lnbmF0dXJl");
       expect(d).not.toContain("me");
-      expect(describeOpenapiToken("abc")).toBe("length 3, not a jwt");
+      expect(describeOpenapiToken("abc")).toBe("length 3, unexpected format");
       expect(describeOpenapiToken("a.b.c")).toBe("length 5, jwt, payload unreadable");
+      expect(describeOpenapiToken("656d1e2f8b3c2a001f7e4a12")).toBe("length 24, 24 hex characters: the format of an openapi token");
+      expect(describeOpenapiToken("0123456789abcdef0123456789abcdef")).toContain("32 hex characters: looks like the account APIKey");
       process.env.OPENAPI_COMPANY_TOKEN = jwt;
       vi.stubGlobal("fetch", vi.fn(async () => json({ success: false, message: "Wrong Token", error: 125.22, data: null }, 401)));
       const r = await getCompany("99999999993");
       expect(r).toMatchObject({ ok: false, reason: "auth" });
       expect((r as { message: string }).message).toBe(`Wrong Token (https://company.openapi.com/IT-start); token: ${d}`);
+    });
+
+    it("falls back to the free EU register for VAT numbers when openapi rejects the call", async () => {
+      const fetchMock = vi.fn(async (url: string) =>
+        url.startsWith("https://ec.europa.eu/")
+          ? json({ valid: true, name: "POSTE ITALIANE S.P.A.", address: "VIALE EUROPA 190 \n00144 ROMA RM\n" })
+          : json({ success: false, message: "Wrong Token", error: 125.22, data: null }, 401),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      expect(await getCompany("01114601006")).toEqual({ ok: true, data: { name: "POSTE ITALIANE S.P.A.", vat: "01114601006", address: "Viale Europa 190", zip: "00144", city: "Roma", province: "RM", country: "Italia" } });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(String((fetchMock.mock.calls[0] as unknown as [string])[0])).toContain("company.openapi.com/IT-start/01114601006");
+      // the card is cached, and a name search has no fallback because VIES cannot search names
+      expect(await searchCompanies("IT01114601006")).toMatchObject({ ok: true, data: { hits: [{ id: "01114601006", name: "POSTE ITALIANE S.P.A." }] } });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(await searchCompanies("poste italiane")).toMatchObject({ ok: false, reason: "auth" });
     });
 
     it("treats 204 as no results and maps provider failures", async () => {

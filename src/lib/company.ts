@@ -243,23 +243,24 @@ function failureFor(status: number, message?: string): LookupResult<never> {
 const openapiBase = () => (companyEnv.openapi.sandbox() ? "https://test.company.openapi.com" : "https://company.openapi.com");
 
 /**
- * What a rejected openapi token looks like, for the server log only and without the token itself:
- * its length, whether it is a JWT and, if so, the payload keys, the scopes and the expiry.
- * openapi tokens carry their scopes ("GET test.company.openapi.com/IT-search"), so this tells a
- * production token used in the sandbox, or a token without the endpoint's scope, from a bad paste.
+ * What a rejected openapi token looks like, for the server log only and without the token itself.
+ * An openapi token is a 24-character hex id ("656d1e2f8b3c2a001f7e4a12" in the OAuth spec); the
+ * account APIKey, which only creates tokens, is 32 characters and is refused with "Wrong Token".
  */
 export function describeOpenapiToken(token: string): string {
+  const base = `length ${token.length}`;
+  if (/^[0-9a-f]{24}$/i.test(token)) return `${base}, 24 hex characters: the format of an openapi token`;
+  if (/^[0-9a-f]{32}$/i.test(token)) return `${base}, 32 hex characters: looks like the account APIKey, which is not a token`;
   const parts = token.split(".");
-  const base = `length ${token.length}, ${parts.length === 3 ? "jwt" : "not a jwt"}`;
-  if (parts.length !== 3) return base;
+  if (parts.length !== 3) return `${base}, unexpected format`;
   try {
     const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8")) as Record<string, unknown>;
     const scopes = Array.isArray(payload.scopes) ? payload.scopes : Array.isArray(payload.scope) ? payload.scope : null;
     const expRaw = payload.exp ?? payload.expire;
-    const exp = typeof expRaw === "number" ? new Date((expRaw > 1e12 ? expRaw : expRaw * 1000)).toISOString() : expRaw;
-    return `${base}, keys ${Object.keys(payload).join(",")}, scopes ${scopes ? JSON.stringify(scopes.slice(0, 12)) : "n/a"}, expires ${String(exp ?? "n/a")}`;
+    const exp = typeof expRaw === "number" ? new Date(expRaw > 1e12 ? expRaw : expRaw * 1000).toISOString() : expRaw;
+    return `${base}, jwt, keys ${Object.keys(payload).join(",")}, scopes ${scopes ? JSON.stringify(scopes.slice(0, 12)) : "n/a"}, expires ${String(exp ?? "n/a")}`;
   } catch {
-    return `${base}, payload unreadable`;
+    return `${base}, jwt, payload unreadable`;
   }
 }
 
@@ -529,7 +530,11 @@ export async function getCompany(idOrVat: string): Promise<LookupResult<Party | 
   }
   return cached(`c:${key}`, 60 * MIN, async () => {
     const r = await callOpenapi(`/IT-start/${encodeURIComponent(key)}`);
-    if (!r.ok) return r;
-    return { ok: true, data: r.data[0] ? toParty(r.data[0]) : null };
+    if (r.ok) return { ok: true, data: r.data[0] ? toParty(r.data[0]) : null };
+    // a rejected token, an empty wallet or the daily cap must not take VAT lookups down: the free EU register still answers them
+    const vat = r.reason === "disabled" ? null : vatDigits(key);
+    if (!vat) return r;
+    const free = await viesLookup(vat);
+    return free.ok && free.data ? free : r;
   });
 }
