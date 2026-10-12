@@ -71,7 +71,7 @@ export type QuoteOptions = {
   vatExemptNote?: string;
 };
 
-export type StyleId = "classico" | "moderno" | "essenziale" | "elegante" | "compatto";
+export type StyleId = "classico" | "moderno" | "essenziale" | "elegante" | "compatto" | "studio";
 
 /** Printed wording the user may override (document language applies to the defaults). */
 export type LabelOverrides = {

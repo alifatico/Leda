@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,
+  // The PDF routes read the document typefaces from disk: keep the files in the serverless bundles.
+  outputFileTracingIncludes: {
+    "/api/pdf": ["./src/lib/pdf/fonts/**/*"],
+    "/api/pdf/sample": ["./src/lib/pdf/fonts/**/*"],
+    "/api/share/[id]/pdf": ["./src/lib/pdf/fonts/**/*"],
+  },
   turbopack: {
     rules: {
       "*.css": {

@@ -1,33 +1,64 @@
 import { labelsFor, type DocLabels } from "./labels";
-import type { Quote, StyleId } from "./types";
+import { paletteFor, type Palette } from "./palette";
+import type { Quote, StyleId, Totals } from "./types";
+
+/** Document typefaces: TTF files for the PDF in `src/lib/pdf/fonts`, Google Fonts for the preview in `src/lib/fonts.ts`. */
+export type FontKey = "franklin" | "manrope" | "inter" | "playfair" | "lora" | "plexCondensed" | "spaceGrotesk";
+
+/** Macro structure of the page: how the header, the margins and the colour are organised. */
+export type LayoutId = "letterhead" | "hero" | "swiss" | "masthead" | "dense" | "sidebar";
 
 /** Visual tokens shared by the PDF and its HTML twin. */
 export type StyleTokens = {
-  font: "helvetica" | "times" | "courier";
-  /** split: name left, title right (default); band: coloured header band; centered: title centred over a rule */
-  header: "split" | "band" | "centered";
-  tableHeader: "filled" | "underline";
-  /** grey box behind the client block */
-  partyBox: boolean;
-  totalsHighlight: "filled" | "outline";
-  /** PDF base font size in points */
+  layout: LayoutId;
+  /** Body family */
+  font: FontKey;
+  /** Family of the title, the sender name and the big amounts */
+  display: FontKey;
+  /** PDF body size in points */
   fontSize: number;
-  rounded: boolean;
+  /** Corner radius of cards, fills and the table header; 0 is square */
+  radius: number;
+  /** PDF page padding; the hero band, the stripe and the sidebar add their own space */
+  margins: { x: number; top: number };
+  tableHeader: "filled" | "rule" | "double";
+  /** Tinted odd rows */
+  zebra: boolean;
+  /** "01", "02"… before each item */
+  numbered: boolean;
+  /** Tinted card behind the client block */
+  clientCard: boolean;
+  /** How the final amount is highlighted */
+  payable: "filled" | "panel" | "outline" | "rule";
+  /** The amount due repeated big in the header band or the sidebar */
+  heroTotal: boolean;
+  /** Initials badge in the brand colour when there is no logo */
+  monogram: boolean;
 };
 
-export const STYLE_IDS = ["classico", "moderno", "essenziale", "elegante", "compatto"] as const satisfies readonly StyleId[];
+export const STYLE_IDS = ["classico", "moderno", "essenziale", "elegante", "compatto", "studio"] as const satisfies readonly StyleId[];
 
 export const STYLES: Record<StyleId, StyleTokens> = {
-  classico: { font: "helvetica", header: "split", tableHeader: "filled", partyBox: true, totalsHighlight: "filled", fontSize: 9.5, rounded: true },
-  moderno: { font: "helvetica", header: "band", tableHeader: "filled", partyBox: false, totalsHighlight: "filled", fontSize: 9.5, rounded: true },
-  essenziale: { font: "helvetica", header: "split", tableHeader: "underline", partyBox: false, totalsHighlight: "outline", fontSize: 9.5, rounded: false },
-  elegante: { font: "times", header: "centered", tableHeader: "underline", partyBox: false, totalsHighlight: "outline", fontSize: 10, rounded: false },
-  compatto: { font: "helvetica", header: "split", tableHeader: "filled", partyBox: true, totalsHighlight: "filled", fontSize: 8.5, rounded: false },
+  classico: { layout: "letterhead", font: "franklin", display: "franklin", fontSize: 9.5, radius: 5, margins: { x: 44, top: 40 }, tableHeader: "filled", zebra: false, numbered: true, clientCard: true, payable: "filled", heroTotal: false, monogram: false },
+  moderno: { layout: "hero", font: "manrope", display: "manrope", fontSize: 9.5, radius: 8, margins: { x: 44, top: 40 }, tableHeader: "rule", zebra: false, numbered: true, clientCard: true, payable: "panel", heroTotal: true, monogram: true },
+  essenziale: { layout: "swiss", font: "inter", display: "inter", fontSize: 9.5, radius: 0, margins: { x: 50, top: 48 }, tableHeader: "rule", zebra: false, numbered: false, clientCard: false, payable: "rule", heroTotal: false, monogram: false },
+  elegante: { layout: "masthead", font: "lora", display: "playfair", fontSize: 10, radius: 0, margins: { x: 56, top: 46 }, tableHeader: "double", zebra: false, numbered: false, clientCard: false, payable: "outline", heroTotal: false, monogram: false },
+  compatto: { layout: "dense", font: "plexCondensed", display: "plexCondensed", fontSize: 8.5, radius: 0, margins: { x: 36, top: 30 }, tableHeader: "filled", zebra: true, numbered: false, clientCard: true, payable: "filled", heroTotal: false, monogram: false },
+  studio: { layout: "sidebar", font: "spaceGrotesk", display: "spaceGrotesk", fontSize: 9.5, radius: 6, margins: { x: 36, top: 44 }, tableHeader: "rule", zebra: false, numbered: true, clientCard: false, payable: "panel", heroTotal: true, monogram: true },
 };
+
+/** Fixed colour column of the "sidebar" layout, in points. */
+export const SIDEBAR_WIDTH = 140;
+/** Full-bleed band of the "hero" layout, in points. */
+export const HERO_HEIGHT = 158;
+/** Colour stripe on the left edge of the "dense" layout, in points. */
+export const STRIPE_WIDTH = 7;
 
 export type ResolvedDesign = {
   style: StyleId;
   tokens: StyleTokens;
+  /** Colours derived from the brand colour */
+  palette: Palette;
   columns: { qty: boolean; unitPrice: boolean; vat: boolean };
   /** Default labels for the document language, with the user's overrides applied */
   labels: DocLabels;
@@ -62,6 +93,7 @@ export function resolveDesign(quote: Quote): ResolvedDesign {
   return {
     style,
     tokens: STYLES[style],
+    palette: paletteFor(quote.branding?.color),
     columns: { qty: d.columns?.qty ?? true, unitPrice: d.columns?.unitPrice ?? true, vat: d.columns?.vat ?? true },
     labels,
     intro: clean(d.intro),
@@ -70,4 +102,24 @@ export function resolveDesign(quote: Quote): ResolvedDesign {
     showSignature: d.showSignature ?? true,
     showValidity: d.showValidity ?? true,
   };
+}
+
+/** Up to two initials for the monogram badge: "Studio Rossi Design" gives "SR". */
+export function monogram(name: string): string {
+  const words = name.trim().split(/\s+/).filter((w) => /\p{L}/u.test(w));
+  return words
+    .slice(0, 2)
+    .map((w) => [...w].find((c) => /\p{L}/u.test(c)) ?? "")
+    .join("")
+    .toUpperCase();
+}
+
+/** The one number the client looks for: what they pay after withholding, else the total. */
+export function headlineAmount(t: Totals, L: DocLabels): { label: string; value: number } {
+  return t.ritenuta > 0 ? { label: L.netPayable, value: t.netPayable } : { label: L.total, value: t.total };
+}
+
+/** "01", "02"… for the numbered item lists. */
+export function itemIndex(i: number): string {
+  return String(i + 1).padStart(2, "0");
 }

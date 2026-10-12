@@ -59,7 +59,7 @@ const dataImage = z
 const label = z.string().max(60).optional();
 
 const designSchema = z.object({
-  style: z.enum(["classico", "moderno", "essenziale", "elegante", "compatto"]).optional(),
+  style: z.enum(["classico", "moderno", "essenziale", "elegante", "compatto", "studio"]).optional(),
   columns: z.object({ qty: z.boolean().optional(), unitPrice: z.boolean().optional(), vat: z.boolean().optional() }).optional(),
   labels: z
     .object({ title: label, from: label, to: label, subject: label, notes: label, paymentTerms: label, acceptance: label, signature: label, total: label, netPayable: label })

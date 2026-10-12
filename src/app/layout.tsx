@@ -1,13 +1,11 @@
 import { BRAND } from "@/lib/brand";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import Script from "next/script";
 import { LocaleProvider } from "@/lib/i18n/context";
 import { it } from "@/lib/i18n/dict";
 import { analyticsEnv, appUrl } from "@/lib/env";
+import { inter } from "@/lib/fonts";
 import "./globals.css";
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl()),

@@ -6,5 +6,6 @@ export * from "./labels";
 export * from "./schema";
 export * from "./sample";
 export * from "./preset";
+export * from "./palette";
 export * from "./styles";
 export * from "./validate";

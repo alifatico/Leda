@@ -67,7 +67,7 @@ describe("PDF styles and editable template", () => {
         labels: { title: "OFFERTA", to: "Preparato per", netPayable: "Da pagare" },
         intro: "Gentile Sig. Gino,\ncome concordato le invio la nostra proposta per il nuovo sito e l'identità visiva.",
         closing: "Coordinate bancarie: IT60 X054 2811 1010 0000 0123 456 intestato a Studio Rossi Design.",
-        cover: { enabled: style === "moderno" || style === "elegante", title: "Sito web e identità visiva", subtitle: "Proposta per Trattoria Da Gino" },
+        cover: { enabled: style === "moderno" || style === "elegante" || style === "studio", title: "Sito web e identità visiva", subtitle: "Proposta per Trattoria Da Gino" },
         showSignature: style !== "compatto",
       };
       const pdf = await renderQuotePdf(q, { watermark: style === "classico", siteUrl: "https://example.com" });
@@ -79,4 +79,34 @@ describe("PDF styles and editable template", () => {
       expect(pages).toBeLessThanOrEqual(3);
     }
   }, 60000);
+});
+
+describe("PDF edge cases", () => {
+  // A 1×1 red PNG: enough to exercise the logo paths (white card on colour, no monogram)
+  const LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+
+  it("renders every style with a logo, a light brand colour, no subject and no withholding", async () => {
+    const { STYLE_IDS } = await import("@/lib/quote");
+    for (const style of STYLE_IDS) {
+      const q = sampleQuote("en");
+      q.subject = undefined;
+      q.branding = { color: "#FACC15", logo: LOGO };
+      q.design = { style, cover: { enabled: true, title: "", subtitle: "" } };
+      const pdf = await renderQuotePdf(q, { watermark: false });
+      dump(`edge-${style}.pdf`, pdf);
+      const text = Buffer.from(pdf).toString("latin1");
+      expect(text.slice(0, 5)).toBe("%PDF-");
+      expect((text.match(/\/Type \/Page[^s]/g) ?? []).length).toBe(2);
+    }
+  }, 60000);
+
+  it("embeds the document typefaces instead of the built-in Helvetica", async () => {
+    const q = sampleQuote("it");
+    q.design = { style: "elegante" };
+    const pdf = await renderQuotePdf(q, { watermark: false });
+    const text = Buffer.from(pdf).toString("latin1");
+    expect(text).toContain("Lora");
+    expect(text).toContain("PlayfairDisplay");
+    expect(text).not.toContain("/BaseFont /Helvetica");
+  }, 30000);
 });
