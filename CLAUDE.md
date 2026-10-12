@@ -1,4 +1,4 @@
-# Preventivo Lampo — notes for future sessions
+# Preventivissimo — notes for future sessions
 
 - Next.js 16 (App Router, Turbopack, `cacheComponents: true`), React 19, Tailwind v4, TypeScript strict.
 - No database by design. Browser localStorage holds quotes; Stripe holds purchases; `src/lib/license.ts` signs HMAC tokens that prove entitlement.
@@ -13,7 +13,7 @@
 - `src/lib/professions.ts` holds the SEO pages' content and templates; sample quotes there must stay deterministic (fixed ids and timestamps) because `/preventivo/[slug]` is prerendered.
 - Comparison table and pricing copy in `dict.ts` cite competitor list prices checked in October 2026 (see `docs/COMPETITORS.md`); update both when prices change.
 - Production runs on Vercel (team `alifaticos-projects`, project `preventivo-lampo`, https://preventivo-lampo-amber.vercel.app, functions in `fra1`); production branch is `master`, which auto-deploys on push. Standing authorization (12 October 2026): after every production deploy, fast-forward `master` to the deployed commit and push it, without asking again; work still happens on the session branch. Stripe live catalog ids, env vars already set and what is still missing are listed in `docs/LAUNCH.md`.
-- The product name lives in `src/lib/brand.ts` (`BRAND`); never hardcode it. "Preventivo Lampo" clashes with an existing app, see `docs/LAUNCH.md`.
+- The product name lives in `src/lib/brand.ts` (`BRAND`, "Preventivissimo" since 12 October 2026; `APP_ID` is the internal slug in Stripe metadata); never hardcode it. The old name "Preventivo Lampo" belongs to an unrelated app; domains, Stripe names and the Vercel project name are still to be aligned, see `docs/LAUNCH.md`.
 - Fiscal regimes: `regimeForfettario`, `prestazioneOccasionale` (no VAT number: no VAT, withholding, no rivalsa) and `rivalsaKind` ("inps" is withheld, "cassa" is not) are all handled in `calc.ts`; the regime select is in `OptionsForm.tsx`.
 - SEO content pages: `/strumenti/*` calculators and `/preventivo-forfettario`, `/preventivo-prestazione-occasionale`, `/come-fare-un-preventivo` use `src/components/ContentPage.tsx` + `FiscalCalculator` (deterministic quote, reuses `computeTotals`). Query presets for the builder: `src/lib/quote/preset.ts`.
 - Client address book: `clientsStore` in `src/lib/storage.ts` keeps one entry per quote (so autosave never stores half-typed names) and survives quote deletion; `src/lib/clients.ts` dedupes by name and searches (tests in `tests/clients.test.ts`). The autocomplete is `ClientNameField` in `PartyForm.tsx`; the Builder passes `book` only for the client, never for the sender.

@@ -1,4 +1,4 @@
-import { BRAND } from "@/lib/brand";
+import { APP_ID, BRAND } from "@/lib/brand";
 import Stripe from "stripe";
 import { appUrl, getPricing, stripeEnv, type PlanId } from "./env";
 
@@ -65,7 +65,7 @@ export async function createCheckoutSession(args: {
   // NB: the {CHECKOUT_SESSION_ID} placeholder must stay un-encoded.
   const success_url = `${base}/success?session_id={CHECKOUT_SESSION_ID}&plan=${args.plan}${docParam}`;
   const cancel_url = `${base}/app?checkout=canceled${docParam}`;
-  const metadata: Record<string, string> = { plan: args.plan, app: "preventivo-lampo" };
+  const metadata: Record<string, string> = { plan: args.plan, app: APP_ID };
   if (args.docId) metadata.docId = args.docId;
 
   const params: Stripe.Checkout.SessionCreateParams = {
@@ -174,7 +174,7 @@ export async function findActiveSubscriptionByEmail(
   const customers = await stripe.customers.list({ email, limit: 10 });
   for (const c of customers.data) {
     const subs = await stripe.subscriptions.list({ customer: c.id, status: "active", limit: 5 });
-    const sub = subs.data.find((s) => s.metadata?.app === "preventivo-lampo") ?? subs.data[0];
+    const sub = subs.data.find((s) => s.metadata?.app === APP_ID) ?? subs.data[0];
     if (sub) return { sub: sub.id, cus: c.id, plan: planOf(sub), periodEndSec: periodEndOf(sub) };
   }
   return null;

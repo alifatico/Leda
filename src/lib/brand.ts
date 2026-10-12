@@ -1,6 +1,10 @@
 /**
- * Product name, in one place. "Preventivo Lampo" is already the name of an
- * unrelated mobile app (preventivolampo.it): to rename, change this constant,
- * then APP_URL / the domain, BUSINESS_NAME and the product names in Stripe.
+ * Product name, in one place. "Preventivissimo" replaced "Preventivo Lampo"
+ * on 12 October 2026, because that name belongs to an unrelated mobile app
+ * (preventivolampo.it). To rename again: change BRAND, then the domain
+ * (APP_URL), BUSINESS_NAME on Vercel and the public name and product names
+ * in Stripe. APP_ID is the internal slug written into Stripe metadata and
+ * used for derived secrets: change it only before the first real sale.
  */
-export const BRAND = "Preventivo Lampo";
+export const BRAND = "Preventivissimo";
+export const APP_ID = "preventivissimo";

@@ -30,7 +30,7 @@ export default function OpenGraphImage() {
           <div style={{ fontSize: 72, fontWeight: 800, lineHeight: 1.05, letterSpacing: -2 }}>Preventivi professionali in PDF in 60 secondi</div>
           <div style={{ fontSize: 30, opacity: 0.9 }}>Rivalsa INPS · Ritenuta d&apos;acconto · Forfettario · Bozza con AI · Nessuna registrazione</div>
         </div>
-        <div style={{ display: "flex", fontSize: 26, opacity: 0.8 }}>preventivolampo · PDF puliti da 4,90 € · Pro da 9 €/mese</div>
+        <div style={{ display: "flex", fontSize: 26, opacity: 0.8 }}>{BRAND.toLowerCase()} · PDF puliti da 4,90 € · Pro da 9 €/mese</div>
       </div>
     ),
     { ...size },

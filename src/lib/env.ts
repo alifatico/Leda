@@ -1,4 +1,4 @@
-import { BRAND } from "@/lib/brand";
+import { APP_ID, BRAND } from "@/lib/brand";
 import { createHash } from "node:crypto";
 
 /**
@@ -55,7 +55,7 @@ export function licenseSecret(): string | undefined {
   const explicit = first(process.env.LICENSE_SECRET);
   if (explicit) return explicit;
   const stripeKey = stripeEnv.secretKey();
-  if (stripeKey) return createHash("sha256").update(`preventivo-lampo:license:${stripeKey}`).digest("hex");
+  if (stripeKey) return createHash("sha256").update(`${APP_ID}:license:${stripeKey}`).digest("hex");
   if (!isProduction()) return "dev-only-insecure-license-secret";
   return undefined;
 }

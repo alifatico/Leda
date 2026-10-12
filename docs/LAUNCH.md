@@ -1,4 +1,4 @@
-# Checklist di lancio — Preventivo Lampo
+# Checklist di lancio — Preventivissimo
 
 Obiettivo: primi 100 € nel mese 1, 300–1.000 €/mese entro 6 mesi, con costi fissi limitati all'hosting (il piano Hobby di Vercel non ammette uso commerciale: serve Vercel Pro o un host equivalente).
 
@@ -10,7 +10,7 @@ Account `acct_1UOYYfPFKsiVAwzR` (Italia). Oggetti creati via API, modalità live
 | --- | --- | --- |
 | Prodotto "Preventivo PDF" | `prod_VPObSQN3pQQiKO` | una tantum |
 | Prezzo singolo 4,90 € | `price_1UOZoqPFKsiVAwzRTw5zFvO7` | lookup key `preventivo_lampo_single_490`, IVA inclusa |
-| Prodotto "Preventivo Lampo Pro" | `prod_VPOb9C3BcJui42` | abbonamento |
+| Prodotto "Preventivo Lampo Pro" | `prod_VPOb9C3BcJui42` | abbonamento; da rinominare "Preventivissimo Pro" nel dashboard Stripe |
 | Prezzo Pro mensile 9 € | `price_1UOZoqPFKsiVAwzRyziMzjj0` | lookup key `preventivo_lampo_pro_monthly_900` |
 | Prezzo Pro annuale 59 € | `price_1UOZoqPFKsiVAwzRN08eCMSv` | lookup key `preventivo_lampo_pro_yearly_5900` |
 | Customer Portal | `bpc_1UOZoqPFKsiVAwzRz4ajvCKA` | predefinito: disdetta a fine periodo, cambio carta, fatture, aggiornamento dati e P.IVA |
@@ -25,7 +25,7 @@ STRIPE_PRICE_PRO_YEARLY=price_1UOZoqPFKsiVAwzRN08eCMSv
 STRIPE_PORTAL_CONFIGURATION=bpc_1UOZoqPFKsiVAwzRz4ajvCKA
 ```
 
-Con una chiave di test (`sk_test_…`) lascia vuote le variabili `STRIPE_PRICE_*`: l'app crea i prezzi al volo. Il nome pubblico dell'account Stripe risulta "PreventivoFacile": allinealo a "Preventivo Lampo" in Stripe → Settings → Public details, perché compare su ricevute ed estratti conto, e "Preventivi Facili" è già il nome di un'app concorrente.
+Con una chiave di test (`sk_test_…`) lascia vuote le variabili `STRIPE_PRICE_*`: l'app crea i prezzi al volo. Il nome pubblico dell'account Stripe risulta "PreventivoFacile": allinealo a "Preventivissimo" in Stripe → Settings → Public details, perché compare su ricevute ed estratti conto, e "Preventivi Facili" è già il nome di un'app concorrente.
 
 ## Vercel: progetto creato il 9 ottobre 2026
 
@@ -38,9 +38,9 @@ Team `alifaticos-projects` (piano Hobby), progetto `preventivo-lampo` (`prj_lj7t
 - Branch di produzione: `master` (dal 10 ottobre 2026 allineato al branch di lavoro con merge fast-forward). Ogni push su `master` fa partire il deploy di produzione automatico di Vercel; i branch di lavoro producono deploy di anteprima.
 - Il piano Hobby vieta l'uso commerciale: passare a Pro prima di incassare.
 
-## Nome: da cambiare prima del lancio
+## Nome: Preventivissimo (scelto il 12 ottobre 2026)
 
-"Preventivo Lampo" è già un'app mobile concorrente (preventivolampo.it, Pro 9,99 €/mese) e i domini preventivolampo.it/.com/.eu sono presi. Il nome è centralizzato in `src/lib/brand.ts` (`BRAND`): cambiarlo lì, poi dominio (`APP_URL`), `BUSINESS_NAME` su Vercel, nome pubblico e prodotti su Stripe. Domini liberi verificati su Vercel il 9 ottobre 2026 (11,25 $/anno, solo .com; tutti i .it corrispondenti sono occupati): preventivopdf.com, preventivonetto.com, preventivissimo.com, preventivosemplice.com, preventivopronto.com, preventivozero.com, facciopreventivo.com, preventivoinunminuto.com. Anche preventivolampo.app (14,99 $) è libero ma mantiene il clash.
+"Preventivo Lampo" era già un'app mobile concorrente (preventivolampo.it, Pro 9,99 €/mese) con i domini preventivolampo.it/.com/.eu presi, quindi il prodotto si chiama **Preventivissimo**: nessun prodotto, sito o app con questo nome al 12 ottobre 2026. Il nome è centralizzato in `src/lib/brand.ts` (`BRAND`; `APP_ID` è lo slug interno scritto nei metadati Stripe). Fatto il 12 ottobre: codice, PDF, pagine legali, `BUSINESS_NAME` su Vercel. Restano da fare: `preventivissimo.com` è libero su Vercel (11,25 $/anno, non ancora comprato: `buy_domain` dopo il preventivo, poi `APP_URL`); `preventivissimo.it` non risulta registrato (DNS NXDOMAIN il 12 ottobre) ma Vercel non vende i .it, va preso da un registrar italiano e puntato a Vercel; nome pubblico dell'account e nomi dei prodotti in Stripe (dashboard, serve la chiave); il progetto Vercel resta `preventivo-lampo` perché rinominarlo cambia l'URL preventivo-lampo-amber.vercel.app usato finché non c'è il dominio. Alternative verificate libere (.com su Vercel, .it non registrati): preventivopulito, preventivopdf, preventivozero, preventivino, preventivoqui, preventivoora, preventivobello, preventivonetto, facciopreventivo. Scartati: "Preventivo Pronto" (tool di preventivi edili con IA già attivo su preventivopronto.it), "Preventivo Diretto" (.it in mano a un servizio di tutela marchi), "Preventivo Perfetto" e "Preventivo Semplice" (.it registrati).
 
 ## Traffico senza intervento manuale (costruito il 9 ottobre 2026)
 

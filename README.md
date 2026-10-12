@@ -1,8 +1,8 @@
-# ⚡ Preventivo Lampo
+# ⚡ Preventivissimo
 
 **Preventivi professionali in PDF in 60 secondi** — un micro-SaaS pronto a incassare.
 
-Chi ha una Partita IVA fa preventivi ogni settimana, di solito con Word o Excel: i calcoli (rivalsa INPS, ritenuta d'acconto, IVA per aliquota, bollo, regime forfettario) sono noiosi e si sbagliano. Preventivo Lampo li fa in automatico, l'AI scrive le voci, il PDF esce pulito con logo e colore del professionista.
+Chi ha una Partita IVA fa preventivi ogni settimana, di solito con Word o Excel: i calcoli (rivalsa INPS, ritenuta d'acconto, IVA per aliquota, bollo, regime forfettario) sono noiosi e si sbagliano. Preventivissimo li fa in automatico, l'AI scrive le voci, il PDF esce pulito con logo e colore del professionista.
 
 **Modello di business**
 
