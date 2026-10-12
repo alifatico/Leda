@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Toaster as SonnerToaster, toast as sonnerToast } from "sonner";
 
 export function cx(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join(" ");
@@ -29,7 +30,7 @@ export function Button({ variant = "primary", size = "md", loading, className, c
   return (
     <button
       className={cx(
-        "inline-flex items-center justify-center font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2",
+        "pressable inline-flex items-center justify-center font-medium disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2",
         variants[variant],
         sizes[size],
         className,
@@ -53,7 +54,7 @@ export function Spinner({ className }: { className?: string }) {
 }
 
 export const inputClass =
-  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50";
+  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-[border-color,box-shadow] duration-150 ease-out placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50";
 
 export function Field({
   label,
@@ -106,11 +107,11 @@ export function Toggle({
   help?: string;
 }) {
   return (
-    <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 hover:border-slate-300">
+    <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 transition-colors duration-150 hover:border-slate-300">
       <span className="relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center">
         <input type="checkbox" className="peer sr-only" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-        <span className="absolute inset-0 rounded-full bg-slate-300 transition peer-checked:bg-indigo-600" />
-        <span className="absolute left-0.5 h-4 w-4 rounded-full bg-white shadow transition peer-checked:translate-x-4" />
+        <span className="absolute inset-0 rounded-full bg-slate-300 transition-colors duration-150 ease-out peer-checked:bg-indigo-600" />
+        <span className="absolute left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-150 ease-out peer-checked:translate-x-4" />
       </span>
       <span>
         <span className="block text-sm font-medium text-slate-800">{label}</span>
@@ -134,6 +135,9 @@ export function Badge({ children, tone = "slate" }: { children: React.ReactNode;
   return <span className={cx("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", tones[tone])}>{children}</span>;
 }
 
+/** The sheet on phones takes 250ms to leave; the centred panel 150ms. */
+const MODAL_EXIT_MS = 250;
+
 export function Modal({
   open,
   onClose,
@@ -147,22 +151,42 @@ export function Modal({
   children: React.ReactNode;
   wide?: boolean;
 }) {
+  // stays mounted while the exit transition plays (see .modal-panel in globals.css)
+  const [present, setPresent] = React.useState(open);
+  if (open && !present) setPresent(true);
+  const closing = present && !open;
+  React.useEffect(() => {
+    if (!closing) return;
+    const t = setTimeout(() => setPresent(false), MODAL_EXIT_MS);
+    return () => clearTimeout(t);
+  }, [closing]);
   React.useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
-  if (!open) return null;
+  if (!present) return null;
+  const state = closing ? "closing" : "open";
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-0 sm:items-center sm:p-4" onClick={onClose} role="dialog" aria-modal>
+    <div
+      className="modal-overlay fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-0 sm:items-center sm:p-4"
+      data-state={state}
+      onClick={onClose}
+      role="dialog"
+      aria-modal
+    >
       <div
-        className={cx("max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl sm:p-6", wide ? "sm:max-w-2xl" : "sm:max-w-lg")}
+        data-state={state}
+        className={cx(
+          "modal-panel max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl ring-1 ring-slate-900/5 sm:rounded-2xl sm:p-6",
+          wide ? "sm:max-w-2xl" : "sm:max-w-lg",
+        )}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-start justify-between gap-4">
           <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-          <button onClick={onClose} className="rounded-md p-1 text-slate-500 hover:bg-slate-100" aria-label="close">
+          <button onClick={onClose} className="pressable rounded-md p-1 text-slate-500 hover:bg-slate-100" aria-label="close">
             <Icon name="x" className="h-5 w-5" />
           </button>
         </div>
@@ -207,23 +231,21 @@ export function Icon({ name, className }: { name: keyof typeof paths | string; c
   );
 }
 
-export function Toast({ message, tone = "info" }: { message: string | null; tone?: "info" | "error" | "success" }) {
-  if (!message) return null;
-  const tones = { info: "bg-slate-900 text-white", error: "bg-red-600 text-white", success: "bg-emerald-600 text-white" };
-  return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-20 z-50 flex justify-center px-4 sm:bottom-6">
-      <div className={cx("pointer-events-auto max-w-md rounded-xl px-4 py-3 text-sm shadow-lg", tones[tone])}>{message}</div>
-    </div>
-  );
+export type ToastTone = "info" | "error" | "success";
+
+/**
+ * Toasts come from Sonner: they stack, swipe away, pause when the tab is hidden and
+ * enter and leave through the same edge. Mounted once per screen, above the action bar.
+ */
+export function Toaster() {
+  return <SonnerToaster position="bottom-center" offset={{ bottom: "calc(var(--bar-h, 64px) + 16px)" }} mobileOffset={{ bottom: "calc(var(--bar-h, 64px) + 16px)" }} duration={4500} richColors closeButton={false} />;
 }
 
 export function useToast() {
-  const [toast, setToast] = React.useState<{ message: string; tone: "info" | "error" | "success" } | null>(null);
-  const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const show = React.useCallback((message: string, tone: "info" | "error" | "success" = "info") => {
-    setToast({ message, tone });
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setToast(null), 4500);
+  const show = React.useCallback((message: string, tone: ToastTone = "info") => {
+    if (tone === "error") sonnerToast.error(message);
+    else if (tone === "success") sonnerToast.success(message);
+    else sonnerToast(message);
   }, []);
-  return { toast, show };
+  return { show };
 }

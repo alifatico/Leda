@@ -353,7 +353,7 @@ function ClientNameField({
           id={listId}
           role="listbox"
           aria-label={t("b.clientBook.title")}
-          className="absolute inset-x-0 top-full z-20 mt-1 max-h-80 overflow-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
+          className="enter-pop absolute inset-x-0 top-full z-20 mt-1 max-h-80 overflow-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg ring-1 ring-slate-900/5"
         >
           {local.length > 0 ? (
             <li className={groupClass}>
@@ -381,7 +381,7 @@ function ClientNameField({
               {onForget ? (
                 <button
                   type="button"
-                  className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-red-600"
+                  className="pressable rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-red-600"
                   title={t("b.clientBook.forget")}
                   aria-label={t("b.clientBook.forget")}
                   onMouseDown={(e) => {

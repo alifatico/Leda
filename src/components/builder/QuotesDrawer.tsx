@@ -52,7 +52,7 @@ export function QuotesDrawer({
                 <Button size="sm" variant="secondary" onClick={() => onUseTemplate(tpl.id)}>
                   {t("b.design.use")}
                 </Button>
-                <button className="rounded p-1.5 text-red-500 hover:bg-red-50" onClick={() => onDeleteTemplate(tpl.id)} title={t("b.delete")}>
+                <button type="button" className="pressable rounded p-1.5 text-red-500 hover:bg-red-50" onClick={() => onDeleteTemplate(tpl.id)} title={t("b.delete")}>
                   <Icon name="trash" className="h-4 w-4" />
                 </button>
               </li>
@@ -66,7 +66,7 @@ export function QuotesDrawer({
           const q = s.quote;
           const total = computeTotals(q).total;
           return (
-            <li key={q.id} className={"flex items-center gap-3 py-2.5 " + (q.id === currentId ? "bg-indigo-50/60 -mx-2 px-2 rounded-lg" : "")}>
+            <li key={q.id} className={"flex items-center gap-3 py-2.5 transition-colors duration-150 " + (q.id === currentId ? "bg-indigo-50/60 -mx-2 px-2 rounded-lg" : "")}>
               <button className="min-w-0 flex-1 text-left" onClick={() => onSelect(q.id)}>
                 <div className="flex items-center gap-2">
                   <span className="truncate text-sm font-medium text-slate-900">{q.number}</span>
@@ -82,10 +82,10 @@ export function QuotesDrawer({
                   {fmtDate(q.updatedAt)} · {formatMoney(total, q.currency, q.lang)}
                 </div>
               </button>
-              <button className="rounded p-1.5 text-slate-500 hover:bg-slate-100" onClick={() => onDuplicate(q.id)} title={t("b.duplicate")}>
+              <button type="button" className="pressable rounded p-1.5 text-slate-500 hover:bg-slate-100" onClick={() => onDuplicate(q.id)} title={t("b.duplicate")}>
                 <Icon name="copy" className="h-4 w-4" />
               </button>
-              <button className="rounded p-1.5 text-red-500 hover:bg-red-50" onClick={() => onDelete(q.id)} title={t("b.delete")}>
+              <button type="button" className="pressable rounded p-1.5 text-red-500 hover:bg-red-50" onClick={() => onDelete(q.id)} title={t("b.delete")}>
                 <Icon name="trash" className="h-4 w-4" />
               </button>
             </li>

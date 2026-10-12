@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useLocale } from "@/lib/i18n/context";
-import { labelsFor, STYLE_IDS, type DocLabels, type LabelOverrides, type Quote, type QuoteDesign } from "@/lib/quote";
+import { labelsFor, STYLE_IDS, STYLES, type DocLabels, type LabelOverrides, type Quote, type QuoteDesign, type StyleId } from "@/lib/quote";
 import { Button, Field, Icon, Input, Modal, Textarea, Toggle, cx } from "../ui";
 
 const LABEL_KEYS = ["title", "from", "to", "subject", "notes", "paymentTerms", "acceptance", "signature", "total", "netPayable"] as const;
@@ -19,6 +19,45 @@ const DEFAULT_KEY: Record<(typeof LABEL_KEYS)[number], keyof DocLabels> = {
   netPayable: "netPayable",
 };
 const MAX_IMAGE_BYTES = 500 * 1024;
+
+/** A thumbnail of a document style, drawn from its tokens in the quote's own colour: header, client box, table, totals. */
+function StyleThumb({ id, color }: { id: StyleId; color: string }) {
+  const tk = STYLES[id];
+  const accent = /^#[0-9a-fA-F]{6}$/.test(color) ? color : "#1E3A8A";
+  const rows = tk.fontSize < 9 ? 5 : 3;
+  return (
+    <span aria-hidden className="relative block h-16 w-12 shrink-0 overflow-hidden rounded-[3px] border border-slate-200 bg-white shadow-sm">
+      {tk.header === "band" ? (
+        <span className="block h-3 w-full" style={{ backgroundColor: accent }} />
+      ) : tk.header === "centered" ? (
+        <span className="mx-auto mt-2 block h-1 w-6 rounded-sm" style={{ backgroundColor: accent }} />
+      ) : (
+        <span className="flex items-start justify-between px-1 pt-1.5">
+          <span className="block h-1 w-4 rounded-sm bg-slate-300" />
+          <span className="block h-1.5 w-3 rounded-sm" style={{ backgroundColor: accent }} />
+        </span>
+      )}
+      <span className={cx("mx-1 mt-1.5 block h-2.5 rounded-[2px]", tk.partyBox ? "bg-slate-100" : "")}>
+        {tk.partyBox ? null : <span className="ml-0.5 mt-0.5 block h-1 w-5 rounded-sm bg-slate-200" />}
+      </span>
+      <span className="mx-1 mt-1.5 block space-y-[3px]">
+        <span className={cx("block h-1.5 w-full", tk.tableHeader === "filled" ? "rounded-[1px]" : "border-b")} style={tk.tableHeader === "filled" ? { backgroundColor: accent, opacity: 0.85 } : { borderColor: accent }} />
+        {Array.from({ length: rows }, (_, i) => (
+          <span key={i} className="flex justify-between">
+            <span className="block h-1 w-5 rounded-sm bg-slate-200" />
+            <span className="block h-1 w-2 rounded-sm bg-slate-200" />
+          </span>
+        ))}
+      </span>
+      <span className={cx("absolute bottom-1 right-1 block h-2 w-5 rounded-[2px]", tk.totalsHighlight === "outline" && "border")} style={tk.totalsHighlight === "filled" ? { backgroundColor: accent } : { borderColor: accent }} />
+      {tk.font === "times" ? (
+        <span className="absolute bottom-0.5 left-1 text-[7px] leading-none text-slate-400" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+          Aa
+        </span>
+      ) : null}
+    </span>
+  );
+}
 
 /** "Modello e stile": everything about how the document looks, free for everyone. */
 export function DesignForm({ quote, onChange, onSaveTemplate }: { quote: Quote; onChange: (patch: Partial<Quote>) => void; onSaveTemplate: (name: string) => void }) {
@@ -51,16 +90,23 @@ export function DesignForm({ quote, onChange, onSaveTemplate }: { quote: Quote; 
     <div className="space-y-4">
       <div>
         <span className="mb-1 block text-xs font-medium text-slate-600">{t("b.design.style")}</span>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
           {STYLE_IDS.map((id) => (
             <button
               key={id}
               type="button"
+              aria-pressed={style === id}
               onClick={() => set({ style: id })}
-              className={cx("rounded-lg border px-3 py-2 text-left", style === id ? "border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500" : "border-slate-200 bg-white hover:border-slate-300")}
+              className={cx(
+                "pressable flex items-center gap-3 rounded-lg border p-2 text-left",
+                style === id ? "border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500" : "border-slate-200 bg-white hover:border-slate-300",
+              )}
             >
-              <span className="block text-sm font-medium text-slate-900">{t(`b.design.styles.${id}`)}</span>
-              <span className="block text-[11px] leading-snug text-slate-500">{t(`b.design.styleDesc.${id}`)}</span>
+              <StyleThumb id={id} color={quote.branding.color} />
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-slate-900">{t(`b.design.styles.${id}`)}</span>
+                <span className="block text-[11px] leading-snug text-slate-500">{t(`b.design.styleDesc.${id}`)}</span>
+              </span>
             </button>
           ))}
         </div>
@@ -84,7 +130,7 @@ export function DesignForm({ quote, onChange, onSaveTemplate }: { quote: Quote; 
 
       <Toggle checked={cover.enabled} onChange={(v) => set({ cover: { ...cover, enabled: v } })} label={t("b.design.cover")} help={t("b.design.coverHelp")} />
       {cover.enabled ? (
-        <div className="grid gap-3 rounded-lg border border-slate-200 p-3 sm:grid-cols-2">
+        <div className="enter-rise grid gap-3 rounded-lg border border-slate-200 p-3 sm:grid-cols-2">
           <Field label={t("b.design.coverTitle")}>
             <Input value={cover.title ?? ""} onChange={(e) => set({ cover: { ...cover, title: e.target.value } })} placeholder={t("b.design.coverTitlePh")} maxLength={200} />
           </Field>
@@ -115,7 +161,7 @@ export function DesignForm({ quote, onChange, onSaveTemplate }: { quote: Quote; 
       <details className="group rounded-lg border border-slate-200 p-3">
         <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-slate-800">
           {t("b.design.labels")}
-          <Icon name="chevron" className="h-4 w-4 text-slate-400 transition-transform group-open:rotate-90" />
+          <Icon name="chevron" className="h-4 w-4 text-slate-400 transition-transform duration-150 ease-out group-open:rotate-90" />
         </summary>
         <p className="mt-1 text-xs text-slate-500">{t("b.design.labelsHelp")}</p>
         <div className="mt-3 grid grid-cols-2 gap-3">

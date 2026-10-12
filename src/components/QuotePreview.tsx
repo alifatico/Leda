@@ -47,7 +47,7 @@ export function QuotePreview({ quote, watermark = false, className = "" }: { quo
   ) : null;
 
   return (
-    <div className={"bg-white text-slate-900 " + className} style={{ fontFamily, fontSize, lineHeight: 1.35 }}>
+    <div className={"bg-white tabular-nums text-slate-900 " + className} style={{ fontFamily, fontSize, lineHeight: 1.35 }}>
       {d.cover ? (
         <div className="relative overflow-hidden border-b-8 border-slate-100" style={{ minHeight: 560 }}>
           {watermarkEl}

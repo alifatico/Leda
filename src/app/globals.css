@@ -2,6 +2,10 @@
 
 @theme inline {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Motion tokens. The built-in CSS easings are too weak for UI: these replace Tailwind's ease-out / ease-in-out. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 html {
@@ -18,4 +22,139 @@ body {
 /* react-pdf's rotate for the HTML preview watermark */
 .-rotate-30 {
   transform: rotate(-30deg);
+}
+
+/*
+ * Motion. Only transform and opacity move; every entrance starts from a visible
+ * shape (never scale(0)) and uses the strong ease-out; exits are faster than
+ * entrances and leave the way they came. Keyboard-driven and constant actions
+ * (typing, totals, the live preview) never animate.
+ */
+@layer components {
+  /* press feedback for anything clickable: 160ms down, instant feel */
+  .pressable {
+    transition:
+      transform 160ms var(--ease-out),
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      box-shadow 150ms ease,
+      opacity 150ms ease;
+  }
+  .pressable:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  /* one-off entrances: a mounted screen, a list row, a dropdown anchored to its field */
+  .enter-fade {
+    opacity: 1;
+    transition: opacity 200ms var(--ease-out);
+  }
+  .enter-rise {
+    opacity: 1;
+    transform: translateY(0);
+    transition:
+      opacity 200ms var(--ease-out),
+      transform 200ms var(--ease-out);
+  }
+  .enter-pop {
+    opacity: 1;
+    transform: scale(1);
+    transform-origin: top left;
+    transition:
+      opacity 150ms var(--ease-out),
+      transform 150ms var(--ease-out);
+  }
+
+  /* modal: centred, scales in from 0.97; on phones it is a bottom sheet that slides on the drawer curve */
+  .modal-overlay {
+    opacity: 1;
+    transition: opacity 200ms var(--ease-out);
+  }
+  .modal-overlay[data-state="closing"] {
+    opacity: 0;
+    transition-duration: 150ms;
+    pointer-events: none;
+  }
+  .modal-panel {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 200ms var(--ease-out),
+      transform 200ms var(--ease-out);
+  }
+  .modal-panel[data-state="closing"] {
+    opacity: 0;
+    transform: scale(0.97);
+    transition-duration: 150ms;
+  }
+  @media (max-width: 639px) {
+    .modal-panel {
+      transition: transform 320ms var(--ease-drawer);
+    }
+    .modal-panel[data-state="closing"] {
+      opacity: 1;
+      transform: translateY(100%);
+      transition-duration: 250ms;
+    }
+  }
+}
+
+@starting-style {
+  .enter-fade {
+    opacity: 0;
+  }
+  .enter-rise {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  .enter-pop {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  .modal-overlay {
+    opacity: 0;
+  }
+  .modal-panel {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+@media (max-width: 639px) {
+  @starting-style {
+    .modal-panel {
+      opacity: 1;
+      transform: translateY(100%);
+    }
+  }
+}
+
+/* Reduced motion: keep the fades that explain a state change, drop every movement. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .pressable:active:not(:disabled) {
+    transform: none;
+  }
+  .enter-rise,
+  .enter-pop,
+  .modal-panel {
+    transition-property: opacity;
+    transform: none;
+  }
+  .modal-panel[data-state="closing"] {
+    opacity: 0;
+    transform: none;
+  }
+  @starting-style {
+    .enter-rise,
+    .enter-pop {
+      transform: none;
+    }
+    .modal-panel {
+      opacity: 0;
+      transform: none;
+    }
+  }
 }

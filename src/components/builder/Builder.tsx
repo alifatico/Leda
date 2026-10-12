@@ -25,7 +25,7 @@ import {
 import { LocaleSwitch } from "../LocaleSwitch";
 import { QuotePreview } from "../QuotePreview";
 import { Logo } from "../SiteChrome";
-import { Badge, Button, Field, Icon, Textarea, Toast, cx, useToast } from "../ui";
+import { Badge, Button, Field, Icon, Textarea, Toaster, cx, useToast } from "../ui";
 import { AiDraftModal } from "./AiDraftModal";
 import { BrandingForm } from "./BrandingForm";
 import { DesignForm } from "./DesignForm";
@@ -58,13 +58,19 @@ function Section({
   return (
     <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center justify-between px-4 py-3">
-        <button className="flex flex-1 items-center gap-2 text-left text-sm font-semibold text-slate-900" onClick={() => onToggle(k)}>
-          <Icon name="chevron" className={cx("h-4 w-4 text-slate-400 transition-transform", open && "rotate-90")} />
+        <button
+          type="button"
+          aria-expanded={open}
+          className="flex flex-1 items-center gap-2 rounded-md text-left text-sm font-semibold text-slate-900 transition-colors duration-150 hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          onClick={() => onToggle(k)}
+        >
+          <Icon name="chevron" className={cx("h-4 w-4 text-slate-400 transition-transform duration-150 ease-out", open && "rotate-90")} />
           {title}
         </button>
         {right}
       </div>
-      {open ? <div className="border-t border-slate-100 px-4 py-4">{children}</div> : null}
+      {/* the body rises in when a section opens; closing is instant, the user asked for it to go */}
+      {open ? <div className="enter-rise border-t border-slate-100 px-4 py-4">{children}</div> : null}
     </section>
   );
 }
@@ -73,7 +79,7 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
   const { t, locale } = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { toast, show } = useToast();
+  const { show } = useToast();
   const license = useLicense();
 
   const [config, setConfig] = useState(initialConfig);
@@ -93,6 +99,7 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
   const [proOpen, setProOpen] = useState(false);
   const [drawer, setDrawer] = useState(false);
   const designRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
 
   // ---- bootstrap: storage, URL params, fresh config
   useEffect(() => {
@@ -136,6 +143,23 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ---- the fixed action bar wraps to two rows on phones: the page padding and the toasts follow its real height
+  const ready = quote !== null;
+  useEffect(() => {
+    const bar = barRef.current;
+    if (!bar || typeof ResizeObserver === "undefined") return;
+    const root = document.documentElement;
+    const ro = new ResizeObserver((entries) => {
+      const h = entries[0]?.contentRect.height;
+      if (h) root.style.setProperty("--bar-h", `${Math.round(h)}px`);
+    });
+    ro.observe(bar);
+    return () => {
+      ro.disconnect();
+      root.style.removeProperty("--bar-h");
+    };
+  }, [ready]);
 
   // ---- persistence: the quote list, the sender profile and the client address book move together
   const persist = useCallback((q: Quote, unlockToken?: string, shareInfo?: ShareInfo) => {
@@ -355,7 +379,7 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
   const clientBook = dedupeClients(clientEntries.filter((e) => e.quoteId !== quote.id));
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
+    <div className="enter-fade min-h-screen bg-slate-50" style={{ paddingBottom: "calc(var(--bar-h, 64px) + 1.5rem)" }}>
       {/* top bar */}
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4">
@@ -374,10 +398,10 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
           </div>
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <span className="hidden text-xs text-slate-400 md:inline">{t("b.saved")}</span>
-            <Button variant="ghost" size="sm" onClick={() => setDrawer(true)}>
+            <Button variant="ghost" size="sm" aria-label={t("b.myQuotes")} onClick={() => setDrawer(true)}>
               <Icon name="list" className="h-4 w-4" /> <span className="hidden sm:inline">{t("b.myQuotes")}</span>
             </Button>
-            <Button variant={license.status === "active" ? "secondary" : "ghost"} size="sm" onClick={() => setProOpen(true)}>
+            <Button variant={license.status === "active" ? "secondary" : "ghost"} size="sm" aria-label={license.status === "active" ? t("b.pro.active") : "Pro"} onClick={() => setProOpen(true)}>
               <Icon name={license.status === "active" ? "star" : "lock"} className="h-4 w-4" />
               <span className="hidden sm:inline">{license.status === "active" ? t("b.pro.active") : "Pro"}</span>
             </Button>
@@ -392,7 +416,7 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
       <div className="mx-auto mt-3 flex max-w-7xl px-4 lg:hidden">
         <div className="inline-flex w-full rounded-lg bg-slate-200 p-0.5 text-sm font-medium">
           {(["edit", "preview"] as const).map((tab) => (
-            <button key={tab} onClick={() => setMobileTab(tab)} className={cx("flex-1 rounded-md py-1.5", mobileTab === tab ? "bg-white text-slate-900 shadow-sm" : "text-slate-600")}>
+            <button key={tab} type="button" onClick={() => setMobileTab(tab)} className={cx("flex-1 rounded-md py-1.5 transition-colors duration-150", mobileTab === tab ? "bg-white text-slate-900 shadow-sm" : "text-slate-600")}>
               {tab === "edit" ? t("b.title") : t("b.preview")}
             </button>
           ))}
@@ -480,11 +504,11 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
       </main>
 
       {/* action bar */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur">
+      <div ref={barRef} className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-end gap-2 px-4 py-3">
           {config.sharing ? (
-            <Button variant="secondary" onClick={openShare} disabled={busy !== null || quote.items.length === 0}>
-              <Icon name="external" className="h-4 w-4" /> {t("b.share.button")}
+            <Button variant="secondary" aria-label={t("b.share.button")} onClick={openShare} disabled={busy !== null || quote.items.length === 0}>
+              <Icon name="external" className="h-4 w-4" /> <span className="hidden sm:inline">{t("b.share.button")}</span>
               {share?.status ? <Badge tone={share.status === "accepted" ? "green" : share.status === "declined" ? "amber" : share.status === "viewed" ? "indigo" : "slate"}>{t(`b.share.status.${share.status}`)}</Badge> : null}
             </Button>
           ) : null}
@@ -542,7 +566,7 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
         onUseTemplate={useTemplate}
         onDeleteTemplate={removeTemplate}
       />
-      <Toast message={toast?.message ?? null} tone={toast?.tone} />
+      <Toaster />
     </div>
   );
 }

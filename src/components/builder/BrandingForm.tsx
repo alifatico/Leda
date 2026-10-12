@@ -34,7 +34,7 @@ export function BrandingForm({ branding, onChange }: { branding: Branding; onCha
               key={c}
               type="button"
               onClick={() => onChange({ ...branding, color: c })}
-              className={cx("h-7 w-7 rounded-full ring-2 ring-offset-2", branding.color.toUpperCase() === c ? "ring-slate-900" : "ring-transparent")}
+              className={cx("pressable h-7 w-7 rounded-full ring-2 ring-offset-2", branding.color.toUpperCase() === c ? "ring-slate-900" : "ring-transparent")}
               style={{ backgroundColor: c }}
               aria-label={c}
             />
