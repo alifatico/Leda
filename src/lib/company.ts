@@ -6,8 +6,10 @@
  *   in under a second with name and registered office. Only companies enrolled
  *   for intra-EU trade are listed, and names cannot be searched.
  * - openapi.com: real-time API. Autocomplete while typing (IT-search with the
- *   "name" enrichment, ~€0.001 a call) and one "start" call for the full card
- *   when a company is picked (~€0.015).
+ *   "name" enrichment: 100 calls a day free, then ~€0.011 a call) and one
+ *   "start" call for the full card when a company is picked (30 a month free,
+ *   then €0.05 pay-as-you-go, €0.015 only on the largest subscription; list
+ *   price checked on 12 October 2026, VAT excluded).
  * - Apify actor (only when COMPANY_LOOKUP=apify): a scraper that runs for tens
  *   of seconds. The search starts a run and returns its id; the browser polls
  *   `pollRun()` until the records are in. Every hit already carries the card.
