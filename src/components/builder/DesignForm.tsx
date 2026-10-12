@@ -90,7 +90,7 @@ export function DesignForm({ quote, onChange, onSaveTemplate }: { quote: Quote; 
     <div className="space-y-4">
       <div>
         <span className="mb-1 block text-xs font-medium text-slate-600">{t("b.design.style")}</span>
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 lg:grid-cols-3">
           {STYLE_IDS.map((id) => (
             <button
               key={id}

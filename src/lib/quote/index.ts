@@ -7,3 +7,4 @@ export * from "./schema";
 export * from "./sample";
 export * from "./preset";
 export * from "./styles";
+export * from "./validate";

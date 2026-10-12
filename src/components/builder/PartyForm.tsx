@@ -34,8 +34,8 @@ export function PartyForm({
       {book ? (
         <ClientNameField party={party} onChange={onChange} book={book} onForget={onForget} lookup={lookup ?? "off"} />
       ) : (
-        <Field label={t("b.f.name")} className="sm:col-span-6">
-          <Input value={party.name} onChange={set("name")} autoComplete="organization" />
+        <Field label={t("b.f.name")} className="sm:col-span-6" required>
+          <Input value={party.name} onChange={set("name")} autoComplete="organization" aria-required />
         </Field>
       )}
       {book && lookup && lookup !== "off" ? (
@@ -304,9 +304,10 @@ function ClientNameField({
 
   return (
     <div className="relative sm:col-span-6">
-      <Field label={t("b.f.name")}>
+      <Field label={t("b.f.name")} required>
         <Input
           ref={inputRef}
+          aria-required
           value={party.name}
           onChange={(e) => {
             onChange({ ...party, name: e.target.value });

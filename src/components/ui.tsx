@@ -61,15 +61,26 @@ export function Field({
   hint,
   children,
   className,
+  required,
 }: {
   label: string;
   hint?: string;
   children: React.ReactNode;
   className?: string;
+  /** Marks a field the PDF cannot do without (asterisk); the builder lists the missing ones next to the download buttons. */
+  required?: boolean;
 }) {
   return (
     <label className={cx("block", className)}>
-      <span className="mb-1 block text-xs font-medium text-slate-600">{label}</span>
+      <span className="mb-1 block text-xs font-medium text-slate-600">
+        {label}
+        {required ? (
+          <span aria-hidden className="text-red-500">
+            {" "}
+            *
+          </span>
+        ) : null}
+      </span>
       {children}
       {hint ? <span className="mt-1 block text-xs text-slate-500">{hint}</span> : null}
     </label>

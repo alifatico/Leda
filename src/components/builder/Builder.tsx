@@ -8,7 +8,7 @@ import { api, ApiError, downloadBlob, formatPrice } from "@/lib/client-api";
 import { dedupeClients, type SavedClient } from "@/lib/clients";
 import type { PlanId, PublicConfig } from "@/lib/env";
 import { useLocale } from "@/lib/i18n/context";
-import { applyPreset, hasPreset, type LineItem, newId, nextQuoteNumber, type Quote, resolveDesign } from "@/lib/quote";
+import { applyPreset, hasPreset, type LineItem, missingFields, newId, nextQuoteNumber, type Quote, resolveDesign } from "@/lib/quote";
 import {
   clientsStore,
   createQuoteFromProfile,
@@ -375,6 +375,8 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
     setTimeout(() => designRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
   };
   const styleId = resolveDesign(quote).style;
+  const missing = missingFields(quote);
+  const blocked = missing.length > 0;
   // the address book never suggests the client of the quote being edited (it would echo what is being typed)
   const clientBook = dedupeClients(clientEntries.filter((e) => e.quoteId !== quote.id));
 
@@ -437,11 +439,12 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
               <Icon name="star" className="h-4 w-4" /> {t("b.sections.design")}
             </Button>
           </div>
+          <p className="text-xs text-slate-500">{t("b.required")}</p>
 
           <Section k="details" open={open.details} onToggle={toggle} title={t("b.sections.details")}>
             <DetailsForm quote={quote} onChange={update} />
           </Section>
-          <Section k="sender" open={open.sender} onToggle={toggle} title={t("b.sections.sender")} right={<span className="text-xs text-slate-400">{t("b.senderHint")}</span>}>
+          <Section k="sender" open={open.sender} onToggle={toggle} title={t("b.sections.sender")} right={<span className="hidden text-xs text-slate-400 sm:inline">{t("b.senderHint")}</span>}>
             <PartyForm party={quote.sender} onChange={(p) => update({ sender: p })} isSender />
           </Section>
           <Section
@@ -506,16 +509,21 @@ export default function Builder({ config: initialConfig }: { config: PublicConfi
       {/* action bar */}
       <div ref={barRef} className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-end gap-2 px-4 py-3">
+          {blocked ? (
+            <p className="mr-auto basis-full text-xs text-amber-700 sm:basis-auto" role="status">
+              {t("b.missing.title")} {missing.map((m) => t(`b.missing.${m}`)).join(", ")}.
+            </p>
+          ) : null}
           {config.sharing ? (
-            <Button variant="secondary" aria-label={t("b.share.button")} onClick={openShare} disabled={busy !== null || quote.items.length === 0}>
+            <Button variant="secondary" aria-label={t("b.share.button")} onClick={openShare} disabled={busy !== null || blocked}>
               <Icon name="external" className="h-4 w-4" /> <span className="hidden sm:inline">{t("b.share.button")}</span>
               {share?.status ? <Badge tone={share.status === "accepted" ? "green" : share.status === "declined" ? "amber" : share.status === "viewed" ? "indigo" : "slate"}>{t(`b.share.status.${share.status}`)}</Badge> : null}
             </Button>
           ) : null}
-          <Button variant="secondary" onClick={downloadFree} loading={busy === "free"} disabled={busy !== null || quote.items.length === 0}>
+          <Button variant="secondary" onClick={downloadFree} loading={busy === "free"} disabled={busy !== null || blocked}>
             <Icon name="file" className="h-4 w-4" /> {busy === "free" ? t("b.downloading") : t("b.downloadFree")}
           </Button>
-          <Button onClick={downloadPaid} loading={busy === "paid"} disabled={busy !== null || quote.items.length === 0} size="lg">
+          <Button onClick={downloadPaid} loading={busy === "paid"} disabled={busy !== null || blocked} size="lg">
             <Icon name={hasEntitlement ? "download" : "unlock"} className="h-5 w-5" /> {busy === "paid" ? t("b.downloading") : paidLabel}
           </Button>
         </div>

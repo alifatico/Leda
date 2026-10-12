@@ -3,15 +3,50 @@
 import { useRef, useState } from "react";
 import { useLocale } from "@/lib/i18n/context";
 import type { Branding } from "@/lib/quote";
-import { Button, Field, Icon, cx } from "../ui";
+import { Button, Field, Icon, Input, cx } from "../ui";
 
-const PRESETS = ["#1E3A8A", "#4F46E5", "#0F766E", "#B91C1C", "#9333EA", "#EA580C", "#0F172A", "#047857"];
+const PRESETS = [
+  { hex: "#1E3A8A", key: "navy" },
+  { hex: "#4F46E5", key: "indigo" },
+  { hex: "#0F766E", key: "teal" },
+  { hex: "#B91C1C", key: "red" },
+  { hex: "#9333EA", key: "purple" },
+  { hex: "#EA580C", key: "orange" },
+  { hex: "#0F172A", key: "slate" },
+  { hex: "#047857", key: "green" },
+] as const;
 const MAX_LOGO_BYTES = 500 * 1024;
+const HEX = /^#[0-9A-F]{6}$/;
+const WHEEL = "conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e, #06b6d4, #6366f1, #ec4899, #ef4444)";
+
+/** Dark check mark on light swatches, white on dark ones. */
+function isLight(hex: string): boolean {
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6;
+}
 
 export function BrandingForm({ branding, onChange }: { branding: Branding; onChange: (b: Branding) => void }) {
   const { t } = useLocale();
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const current = branding.color.toUpperCase();
+  const preset = PRESETS.find((p) => p.hex === current);
+
+  // the hex box follows the swatches and the picker; what is typed only lands when it is a full colour
+  const [hexText, setHexText] = useState(current);
+  const [lastColor, setLastColor] = useState(current);
+  if (current !== lastColor) {
+    setLastColor(current);
+    setHexText(current);
+  }
+  const typeHex = (raw: string) => {
+    setHexText(raw);
+    const v = "#" + raw.trim().replace(/^#/, "").toUpperCase();
+    if (HEX.test(v)) onChange({ ...branding, color: v });
+  };
 
   const onFile = (file: File | undefined) => {
     setError(null);
@@ -27,21 +62,54 @@ export function BrandingForm({ branding, onChange }: { branding: Branding; onCha
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <Field label={t("b.color")}>
-        <div className="flex flex-wrap items-center gap-2">
-          {PRESETS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => onChange({ ...branding, color: c })}
-              className={cx("pressable h-7 w-7 rounded-full ring-2 ring-offset-2", branding.color.toUpperCase() === c ? "ring-slate-900" : "ring-transparent")}
-              style={{ backgroundColor: c }}
-              aria-label={c}
+      {/* not a <Field>: a label around several controls would open the colour picker on any click */}
+      <div>
+        <span className="mb-1 block text-xs font-medium text-slate-600">{t("b.color")}</span>
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t("b.color")}>
+          {PRESETS.map((p) => {
+            const selected = current === p.hex;
+            return (
+              <button
+                key={p.hex}
+                type="button"
+                aria-label={t(`b.colorNames.${p.key}`)}
+                title={t(`b.colorNames.${p.key}`)}
+                aria-pressed={selected}
+                onClick={() => onChange({ ...branding, color: p.hex })}
+                className={cx("pressable flex h-8 w-8 items-center justify-center rounded-full ring-2 ring-offset-2", selected ? "ring-slate-900" : "ring-transparent hover:ring-slate-300")}
+                style={{ backgroundColor: p.hex }}
+              >
+                {selected ? <Icon name="check" className={cx("h-4 w-4", isLight(p.hex) ? "text-slate-900" : "text-white")} /> : null}
+              </button>
+            );
+          })}
+          {/* the colour wheel is the universal sign for "pick your own": the native picker sits inside the label */}
+          <label
+            className={cx("pressable relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-full ring-2 ring-offset-2", preset ? "ring-transparent hover:ring-slate-300" : "ring-slate-900")}
+            title={t("b.colorCustom")}
+            style={{ background: WHEEL }}
+          >
+            <span className="absolute inset-[3px] rounded-full border-2 border-white" style={{ backgroundColor: current }} />
+            <input
+              type="color"
+              value={current}
+              onChange={(e) => onChange({ ...branding, color: e.target.value.toUpperCase() })}
+              className="sr-only"
+              aria-label={t("b.colorCustom")}
             />
-          ))}
-          <input type="color" value={branding.color} onChange={(e) => onChange({ ...branding, color: e.target.value.toUpperCase() })} className="h-8 w-10 cursor-pointer rounded border border-slate-300 bg-white" />
+          </label>
         </div>
-      </Field>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+          <label className="flex items-center gap-2">
+            <span>{t("b.colorHex")}</span>
+            <span className="block w-28">
+              <Input value={hexText} onChange={(e) => typeHex(e.target.value)} onBlur={() => setHexText(current)} maxLength={7} spellCheck={false} className="font-mono uppercase" />
+            </span>
+          </label>
+          <span>{preset ? t(`b.colorNames.${preset.key}`) : t("b.colorCustom")}</span>
+        </div>
+        <span className="mt-1 block text-xs text-slate-500">{t("b.colorHelp")}</span>
+      </div>
       <Field label={t("b.logo")}>
         <div className="flex items-center gap-3">
           {branding.logo ? (
